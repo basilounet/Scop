@@ -1,0 +1,16 @@
+*obj/
+*.o
+*.a
+*.out
+*.vscode/
+*test*/
+*examples*/
+*build/
+*.idea
+#*.gitignore
+
+libs/
+includes/glad
+src/glad.cpp
+
+scop
