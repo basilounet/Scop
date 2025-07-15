@@ -3,6 +3,10 @@
 SRC = 	$(GLAD_CPP) \
 		main.cpp \
 		Scop.cpp \
+		Shader.cpp \
+		VBO.cpp \
+		EBO.cpp \
+		VAO.cpp \
 
 
 ##========== NAMES ==========##

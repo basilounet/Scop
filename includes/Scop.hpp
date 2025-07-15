@@ -10,17 +10,21 @@
 # include <vector>
 # include <glad/glad.h>
 # include <GLFW/glfw3.h>
+# include "Shader.hpp"
+# include "VAO.hpp"
+# include "VBO.hpp"
+# include "EBO.hpp"
 
 
 class Scop {
 private:
 	GLFWwindow*					_window;
 	std::vector<GLfloat>		_vertices;
-	std::vector<GLfloat>		_indices;
-	GLuint						_shaderProgram;
-	GLuint						_vbo;
-	GLuint						_vao;
-	GLuint						_ebo;
+	std::vector<GLuint>			_indices;
+	Shader						_shaderProgram;
+	VAO							_vao;
+	VBO							_vbo;
+	EBO							_ebo;
 
 public:
 	Scop();
