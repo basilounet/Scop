@@ -29,6 +29,7 @@ public:
 
 	void	activate();
 	void	deleteShader();
+	GLuint	getId();
 };
 
 

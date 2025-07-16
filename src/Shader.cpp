@@ -69,3 +69,7 @@ void Shader::activate() {
 void Shader::deleteShader() {
 	glDeleteProgram(_id);
 }
+
+GLuint Shader::getId() {
+	return _id;
+}
