@@ -7,6 +7,8 @@ SRC = 	$(GLAD_CPP) \
 		VBO.cpp \
 		EBO.cpp \
 		VAO.cpp \
+		stb.cpp \
+		Texture.cpp \
 
 
 ##========== NAMES ==========##

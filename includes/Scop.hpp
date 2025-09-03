@@ -3,17 +3,19 @@
 //
 
 #ifndef SCOP_H
-#define SCOP_H
+# define SCOP_H
 
 # include <iostream>
 # include <cmath>
 # include <vector>
 # include <glad/glad.h>
 # include <GLFW/glfw3.h>
+# include "stb_image.h"
 # include "Shader.hpp"
 # include "VAO.hpp"
 # include "VBO.hpp"
 # include "EBO.hpp"
+# include "Texture.hpp"
 
 
 class Scop {
@@ -25,6 +27,7 @@ private:
 	VAO							_vao;
 	VBO							_vbo;
 	EBO							_ebo;
+	Texture						_texture;
 
 public:
 	Scop();

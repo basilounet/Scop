@@ -20,17 +20,15 @@ Scop::Scop() {
 	// Set the viewport to the size of the window
 	glViewport(0, 0 ,600, 600);
 	_vertices.insert(_vertices.end(), {
-		-0.5f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f, // Lower left corner
-		 0.5f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f, // Lower right corner
-		 0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f,     1.0f, 0.6f,  0.32f, // Upper corner
-		-0.25f, 0.5f * float(sqrt(3)) * 1 / 6, 0.0f,     0.9f, 0.45f, 0.17f, // Inner left
-		 0.25f, 0.5f * float(sqrt(3)) * 1 / 6, 0.0f,     0.9f, 0.45f, 0.17f, // Inner right
-		 0.0f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f  // Inner down
-	});
+			//     COORDINATES     /        COLORS      /   TexCoord  //
+			-0.5f, -0.5f, 0.0f,     1.0f, 0.0f, 0.0f,	0.0f, 0.0f, // Lower left corner
+			-0.5f,  0.5f, 0.0f,     0.0f, 1.0f, 0.0f,	0.0f, 1.0f, // Upper left corner
+			 0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,	1.0f, 1.0f, // Upper right corner
+			 0.5f, -0.5f, 0.0f,     1.0f, 1.0f, 1.0f,	1.0f, 0.0f  // Lower right corner
+		});
 	_indices.insert(_indices.end(), {
-		0, 3, 5,
-		3, 2, 4,
-		5, 4, 1
+		0, 2, 1, // Upper triangle
+		0, 3, 2 // Lower triangle
 	});
 	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
 	_vao = VAO();
@@ -39,24 +37,19 @@ Scop::Scop() {
 	_vbo = VBO(_vertices.data(), _vertices.size() * sizeof(GLfloat));
 	_ebo = EBO(_indices.data(), _indices.size() * sizeof(GLuint));
 
-	_vao.linkAttrib(_vbo, 0, 3, GL_FLOAT, 6 * sizeof(GLfloat), (void*)0); // Position
-	_vao.linkAttrib(_vbo, 1, 3, GL_FLOAT, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // Color
+	_vao.linkAttrib(_vbo, 0, 3, GL_FLOAT, 8 * sizeof(GLfloat), (void*)0); // Position
+	_vao.linkAttrib(_vbo, 1, 3, GL_FLOAT, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // Color
+	_vao.linkAttrib(_vbo, 2, 2, GL_FLOAT, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // Color
 	_vao.unbind();
 	_vbo.unbind();
 	_ebo.unbind();
+
+	stbi_set_flip_vertically_on_load(true);
+	_texture = Texture("./resources/textures/image.png");
 }
 
 Scop::Scop(const Scop& other) {
 	*this = other;
-}
-
-Scop::~Scop() {
-	_shaderProgram.deleteShader();
-	_vao.deleteVAO();
-	_vbo.deleteVBO();
-	_ebo.deleteEBO();
-	glfwDestroyWindow(_window);
-	glfwTerminate();
 }
 
 Scop& Scop::operator=(const Scop& other) {
@@ -68,19 +61,36 @@ Scop& Scop::operator=(const Scop& other) {
 		_vao = other._vao;
 		_vbo = other._vbo;
 		_ebo = other._ebo;
+		_texture = other._texture;
 	}
 	return *this;
+}
+
+Scop::~Scop() {
+	_shaderProgram.deleteShader();
+	_vao.deleteVAO();
+	_vbo.deleteVBO();
+	_ebo.deleteEBO();
+	_texture.deleteTexture();
+	glfwDestroyWindow(_window);
+	glfwTerminate();
 }
 
 /* ==================== METHODS ==================== */
 
 void Scop::gameLoop() {
-	GLuint uniId = glGetUniformLocation(_shaderProgram.getId(), "scale");
+	const GLuint scaleUni = glGetUniformLocation(_shaderProgram.getId(), "scale");
+	const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
+
+	_shaderProgram.activate();
+	glUniform1i(tex1IdUni, 0);
+
 	while (!glfwWindowShouldClose(_window)) {
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		_shaderProgram.activate();
-		glUniform1f(uniId, 0.5f);
+		glUniform1f(scaleUni, 0.5f);
+		_texture.bind();
 		_vao.bind();
 		glDrawElements(GL_TRIANGLES, _indices.size(), GL_UNSIGNED_INT, 0);
 		glfwSwapBuffers(_window);
