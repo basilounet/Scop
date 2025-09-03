@@ -9,6 +9,7 @@ SRC = 	$(GLAD_CPP) \
 		VAO.cpp \
 		stb.cpp \
 		Texture.cpp \
+		Camera.cpp \
 
 
 ##========== NAMES ==========##

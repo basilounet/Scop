@@ -6,12 +6,16 @@ layout (location = 2) in vec2 aTex;
 
 out vec3 color;
 out vec2 texCoord;
-uniform float scale;
+
+uniform mat4 camMatrix;
+uniform mat4 model;
 
 void main()
 {
 
-   gl_Position = vec4(aPos.x + aPos.x * scale, aPos.y + aPos.y * scale, aPos.z + aPos.z * scale, 1.0);
+   gl_Position = camMatrix * model * vec4(aPos, 1.0f);
+//   gl_Position = proj * view * model * vec4(aPos, 1.0f);
+//   gl_Position = vec4(aPos.x + aPos.x * scale, aPos.y + aPos.y * scale, aPos.z + aPos.z * scale, 1.0);
 //   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
    color = aColor;
    texCoord = aTex;
