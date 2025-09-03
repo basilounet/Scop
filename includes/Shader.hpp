@@ -19,6 +19,8 @@ class Shader {
 private:
 	GLuint	_id;
 
+	static void	compileErrors(unsigned int shader, const std::string& type);
+
 public:
 	Shader();
 	Shader(const std::string& vertexPath, const std::string& fragmentPath);
@@ -27,9 +29,9 @@ public:
 
 	Shader& operator=(const Shader& other);
 
-	void	activate();
-	void	deleteShader();
-	GLuint	getId();
+	void	activate() const;
+	void	deleteShader() const;
+	GLuint	getId() const;
 };
 
 

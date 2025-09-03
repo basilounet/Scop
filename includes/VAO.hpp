@@ -19,9 +19,9 @@ public:
 
 	VAO &operator=(const VAO &other);
 
-	void linkAttrib(VBO &VBO, GLuint layout, GLuint nbComponents, GLenum type, GLsizeiptr stride, void *offset);
+	void linkAttrib(const VBO &VBO, GLuint layout, GLuint nbComponents, GLenum type, GLsizeiptr stride, const void *offset);
 	void bind() const;
-	void unbind() const;
+	void unbind();
 	void deleteVAO() const;
 };
 

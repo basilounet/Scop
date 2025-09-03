@@ -31,7 +31,12 @@ VAO &VAO::operator=(const VAO &other) {
 
 /* ==================== METHODS ==================== */
 
-void VAO::linkAttrib(VBO &VBO, GLuint layout, GLuint nbComponents, GLenum type, GLsizeiptr stride, void *offset) {
+void VAO::linkAttrib(const VBO &VBO,
+					const GLuint layout,
+					const GLuint nbComponents,
+					const GLenum type,
+					const GLsizeiptr stride,
+					const void *offset) {
 	VBO.bind();
 	glVertexAttribPointer(layout, nbComponents, type, GL_FALSE, stride, offset);
 	glEnableVertexAttribArray(layout);
@@ -42,7 +47,7 @@ void VAO::bind() const {
 	glBindVertexArray(_id);
 }
 
-void VAO::unbind() const {
+void VAO::unbind() {
 	glBindVertexArray(0);
 }
 

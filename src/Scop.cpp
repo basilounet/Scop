@@ -51,11 +51,11 @@ Scop::Scop(const Scop& other) {
 }
 
 Scop::~Scop() {
-	glfwDestroyWindow(_window);
 	_shaderProgram.deleteShader();
 	_vao.deleteVAO();
 	_vbo.deleteVBO();
 	_ebo.deleteEBO();
+	glfwDestroyWindow(_window);
 	glfwTerminate();
 }
 

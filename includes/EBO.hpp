@@ -13,7 +13,7 @@ private:
 
 public:
 	EBO();
-	EBO(GLuint* indices, GLsizeiptr size);
+	EBO(const GLuint* indices, GLsizeiptr size);
 	EBO(const EBO& other);
 	~EBO();
 

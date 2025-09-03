@@ -13,7 +13,7 @@ private:
 
 public:
 	VBO();
-	VBO(GLfloat* vertices, GLsizeiptr size);
+	VBO(const GLfloat* vertices, GLsizeiptr size);
 	VBO(const VBO& other);
 	~VBO();
 
