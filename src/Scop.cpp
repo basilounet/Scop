@@ -114,7 +114,7 @@ void Scop::gameLoop() {
 		_camera.matrix(45.0f, 0.1f, 100.0f, _shaderProgram, "camMatrix");
 
 		glm::mat4 model = glm::mat4(1.0f);
-		rotation += _deltaTime * 5.0f;
+		// rotation += _deltaTime * 5.0f;
 		model = glm::rotate(model, glm::radians((float)rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		glUniformMatrix4fv(modelUni, 1, GL_FALSE, glm::value_ptr(model));

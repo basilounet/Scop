@@ -82,26 +82,21 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
 		_speed = _slowSpeed;
 
-	// if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-	// 	_orientation += (float)deltaTime * glm::rotate(_orientation, glm::radians(_speed * 50), _up);
-	// 	// _orientation += (float)deltaTime * _speed* -glm::normalize(glm::cross(_up, _pos));
-	// if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-	// 	_orientation += (float)deltaTime * -glm::rotate(_orientation, glm::radians(_speed * 50), _up);
-	// 	// _orientation += (float)deltaTime * _speed * glm::normalize(glm::cross(_up, _pos));
-	// if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && _orientation.y < 0.99f)
-	// 	_orientation +=  (float)deltaTime * _speed * _up;
-	// if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && _orientation.y > -0.99f)
-	// 	_orientation +=  (float)deltaTime * _speed * -_up;
-	// _orientation = glm::normalize(_orientation);
-	// std::cout << "orientation : [" << _orientation.x << ", " << _orientation.y << ", " << _orientation.z << "]" << std::endl;
-
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
 	double mouseX, mouseY;
 	glfwGetCursorPos(window, &mouseX, &mouseY);
 	float rotX = _sensitivity * (float)(mouseY - _height / 2) / _height;
 	float rotY = _sensitivity * (float)(mouseX - _width / 2) / _width;
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		rotY -= _speed * (float)deltaTime * 20.0f;
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		rotY += _speed * (float)deltaTime * 20.0f;
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		rotX -= _speed * (float)deltaTime * 20.0f;
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		rotX += _speed * (float)deltaTime * 20.0f;
+	// std::cout << "orientation : [" << _orientation.x << ", " << _orientation.y << ", " << _orientation.z << "]" << std::endl;
+
 
 
 	glm::vec3 newOrientation = glm::rotate(_orientation, glm::radians(-rotX), glm::normalize(glm::cross(_orientation, _up)));
@@ -110,5 +105,9 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 
 	_orientation = glm::rotate(_orientation, glm::radians(-rotY), _up);
 	glfwSetCursorPos(window, (double)_width / 2, (double)_height / 2);
+
+	// TODO : Move out of here
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
 
 }
