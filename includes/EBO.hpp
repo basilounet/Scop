@@ -6,6 +6,7 @@
 #define EBO_H
 
 # include "glad/glad.h"
+# include <vector>
 
 class EBO {
 private:
@@ -13,7 +14,7 @@ private:
 
 public:
 	EBO();
-	EBO(const GLuint* indices, GLsizeiptr size);
+	EBO(const std::vector<GLuint>& indices);
 	EBO(const EBO& other);
 	~EBO();
 

@@ -10,19 +10,21 @@ Texture::Texture() : _imgWidth(0), _imgHeight(0), _numColCh(0), _imgData(nullptr
 
 }
 
-Texture::Texture(const std::string &path) {
+Texture::Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum format, const GLenum pixelType) {
+	_type = texType;
 	_imgData = stbi_load(path.c_str(), &_imgWidth, &_imgHeight, &_numColCh, 0);
 	if (!_imgData)
 		throw std::runtime_error("Failed to load image");
 
 	glGenTextures(1, &_textureID);
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0 + slot);
+	_unit = slot;
 	glBindTexture(GL_TEXTURE_2D, _textureID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _imgWidth, _imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, _imgData);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _imgWidth, _imgHeight, 0, format, pixelType, _imgData);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(_imgData);
@@ -41,6 +43,8 @@ Texture & Texture::operator=(const Texture &other) {
 		_numColCh = other._numColCh;
 		_imgData = other._imgData;
 		_textureID = other._textureID;
+		_type = other._type;
+		_unit = other._unit;
 	}
 	return *this;
 }
@@ -48,7 +52,16 @@ Texture & Texture::operator=(const Texture &other) {
 Texture::~Texture() {
 }
 
+/* ==================== GETTERS / SETTERS ==================== */
+
+std::string Texture::getType() {
+	return (_type);
+}
+
+/* ==================== METHODS ==================== */
+
 void Texture::bind() const {
+	glActiveTexture(GL_TEXTURE0 +_unit);
 	glBindTexture(GL_TEXTURE_2D, _textureID);
 }
 
@@ -60,5 +73,11 @@ void Texture::deleteTexture() const {
 	glDeleteTextures(1, &_textureID);
 }
 
-
-/* ==================== METHODS ==================== */
+void Texture::texUnit(const Shader& shader, const std::string& uniform, const GLuint unit) {
+	// Gets the location of the uniform
+	GLuint texUni = glGetUniformLocation(shader.getId(), uniform.c_str());
+	// Shader needs to be activated before changing the value of a uniform
+	shader.activate();
+	// Sets the value of the uniform
+	glUniform1i(texUni, unit);
+}

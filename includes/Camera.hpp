@@ -21,6 +21,7 @@ private:
 	glm::vec3	_pos;
 	glm::vec3	_orientation;
 	glm::vec3	_up;
+	glm::mat4	_cameraMatrix;
 
 	int			_width, _height;
 	float		_slowSpeed;
@@ -32,12 +33,15 @@ public:
 	Camera();
 	Camera(const int width, const int height, const glm::vec3& position);
 	Camera(const Camera& other);
+	Camera& operator=(const Camera& other);
 	~Camera();
 
-	Camera& operator=(const Camera& other);
 
-	void matrix(const float FOVDeg, const float nearPlane, const float farPlane, const Shader& shader, const char* uniform);
-	void inputs(GLFWwindow* window, const double deltaTime);
+	glm::vec3	getPos() const;
+
+	void	updateMatrix(const float FOVDeg, const float nearPlane, const float farPlane);
+	void	matrix(const Shader& shader, const char* uniform);
+	void	inputs(GLFWwindow* window, const double deltaTime);
 };
 
 

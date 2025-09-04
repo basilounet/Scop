@@ -63,6 +63,12 @@ Shader::~Shader() {
 	// glDeleteProgram(_id);
 }
 
+/* ==================== GETTERS / SETTERS ==================== */
+
+GLuint Shader::getId() const {
+	return _id;
+}
+
 /* ==================== METHODS ==================== */
 
 void Shader::activate() const {
@@ -71,10 +77,6 @@ void Shader::activate() const {
 
 void Shader::deleteShader() const {
 	glDeleteProgram(_id);
-}
-
-GLuint Shader::getId() const {
-	return _id;
 }
 
 void Shader::compileErrors(unsigned int shader, const std::string& type)

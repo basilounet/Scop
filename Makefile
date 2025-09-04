@@ -10,6 +10,7 @@ SRC = 	$(GLAD_CPP) \
 		stb.cpp \
 		Texture.cpp \
 		Camera.cpp \
+		Mesh.cpp \
 
 
 ##========== NAMES ==========##

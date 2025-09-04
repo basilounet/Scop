@@ -9,10 +9,10 @@
 VBO::VBO() : _id(0) {
 }
 
-VBO::VBO(const GLfloat* vertices, const GLsizeiptr size) : _id(0) {
+VBO::VBO(const std::vector<Vertex>& vertices) : _id(0) {
 	glGenBuffers(1, &_id);
 	glBindBuffer(GL_ARRAY_BUFFER, _id);
-	glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 }
 
 VBO::VBO(const VBO& other) {

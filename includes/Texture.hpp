@@ -4,12 +4,13 @@
 
 #ifndef SCOP_TEXTURE_HPP
 # define SCOP_TEXTURE_HPP
+
+# include <iostream>
 # include <string>
 # include <glad/glad.h>
 # include <GLFW/glfw3.h>
 # include "stb_image.h"
-# include <iostream>
-
+# include <Shader.hpp>
 
 class Texture {
 private:
@@ -18,18 +19,23 @@ private:
 	int				_numColCh;
 	unsigned char*	_imgData;
 	GLuint			_textureID;
+	std::string		_type;
+	GLuint			_unit;
 
 public:
 	Texture();
-	Texture(const std::string& path);
+	Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum format, const GLenum pixelType);
 	Texture(const Texture& other);
 	~Texture();
 
 	Texture& operator=(const Texture& other);
 
+	std::string	getType();
+
 	void bind() const;
 	void unbind() const;
 	void deleteTexture() const;
+	void texUnit(const Shader& shader, const std::string& uniform, const GLuint unit);
 
 };
 

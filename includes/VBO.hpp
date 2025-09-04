@@ -6,6 +6,15 @@
 #define VBO_HPP
 
 # include "glad/glad.h"
+# include <glm/glm.hpp>
+# include <vector>
+
+struct Vertex {
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec3 color;
+	glm::vec2 texCoord;
+};
 
 class VBO {
 private:
@@ -13,7 +22,7 @@ private:
 
 public:
 	VBO();
-	VBO(const GLfloat* vertices, GLsizeiptr size);
+	VBO(const std::vector<Vertex>& vertices);
 	VBO(const VBO& other);
 	~VBO();
 

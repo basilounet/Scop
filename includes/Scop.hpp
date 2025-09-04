@@ -15,12 +15,8 @@
 # include <glm/gtc/matrix_transform.hpp>
 # include <glm/gtc/type_ptr.hpp>
 
-# include "Shader.hpp"
-# include "VAO.hpp"
-# include "VBO.hpp"
-# include "EBO.hpp"
-# include "Texture.hpp"
 # include "Camera.hpp"
+# include "Mesh.hpp"
 
 
 class Scop {
@@ -29,14 +25,9 @@ private:
 	double						_lastTime;
 	double						_deltaTime;
 	GLFWwindow*					_window;
-	std::vector<GLfloat>		_vertices;
-	std::vector<GLuint>			_indices;
 	Shader						_shaderProgram;
-	VAO							_vao;
-	VBO							_vbo;
-	EBO							_ebo;
 	Camera						_camera;
-	Texture						_texture;
+	Mesh						_object;
 
 public:
 	Scop();
