@@ -17,7 +17,7 @@
 
 # include "Camera.hpp"
 # include "Mesh.hpp"
-
+# include "Colors.hpp"
 
 class Scop {
 private:
@@ -27,16 +27,18 @@ private:
 	GLFWwindow*					_window;
 	Shader						_shaderProgram;
 	Camera						_camera;
-	Mesh						_object;
+	std::vector<Object>			_objects;
+	Mesh						_mesh;
 
 public:
-	Scop();
+	Scop(int ac, char **av);
 	Scop(const Scop& other);
 	~Scop();
 	Scop& operator=(const Scop& other);
 
 
-	void gameLoop();
+	void	parse(int ac, char **av);
+	void	gameLoop();
 };
 
 

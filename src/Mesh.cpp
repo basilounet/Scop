@@ -29,6 +29,17 @@ Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indic
 
 }
 
+Mesh::Mesh(Object &object) {
+	*this = Mesh(object.getVertices(), object.getIndices(), object.getTextures());
+}
+
+Mesh::Mesh(const Object &object) {
+	*this = Mesh(
+	((Object)object).getVertices(),
+	((Object)object).getIndices(),
+	((Object)object).getTextures());
+}
+
 Mesh::Mesh(const Mesh &other) {
 	*this = other;
 }

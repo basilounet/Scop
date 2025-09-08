@@ -11,6 +11,7 @@ SRC = 	$(GLAD_CPP) \
 		Texture.cpp \
 		Camera.cpp \
 		Mesh.cpp \
+		Object.cpp \
 
 
 ##========== NAMES ==========##
@@ -52,7 +53,7 @@ CXX = c++
 
 ##========== FLAGS ==========##
 
-CXXFLAGS = -Wall -Wextra -Werror
+CXXFLAGS = -Wall -Wextra -Werror -std=c++17
 LDFLAGS = $(LIBS)
 LIBS = -I$(INCLUDE_DIR) -I$(GLFW)include
 

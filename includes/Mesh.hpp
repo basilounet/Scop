@@ -13,6 +13,7 @@
 # include "EBO.hpp"
 # include "Shader.hpp"
 # include "Texture.hpp"
+# include "Object.hpp"
 
 
 class Mesh {
@@ -29,7 +30,10 @@ private:
 public:
 	Mesh();
 	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures);
+	explicit Mesh(Object& object);
+	explicit Mesh(const Object & object);
 	Mesh(const Mesh& other);
+
 	Mesh& operator=(const Mesh& other);
 	~Mesh();
 

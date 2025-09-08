@@ -1,0 +1,12 @@
+    #   Blender v2.71 (sub 0) OBJ File: '42.blend'
+#   www.blender.org
+                        mtllib      42.mtl
+o                       cube
+
+v    -0.5  0  0.5
+    v    -0.5  0 -0.5
+    v  0.5  0                         -0.5
+                  v  0.5                    0         0.5
+
+
+
