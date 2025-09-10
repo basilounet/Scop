@@ -37,9 +37,13 @@ public:
 	Mesh& operator=(const Mesh& other);
 	~Mesh();
 
-	void draw(const Shader& shader, const Camera& camera);
+	void	draw(const Shader& shader, const Camera& camera);
 
-	void destroy();
+	void	setVertices(const std::vector<Vertex>& vertices);
+	void	setIndices(const std::vector<GLuint>& indices);
+	void	setTextures(const std::vector<Texture>& textures);
+
+	void	destroy();
 };
 
 

@@ -19,12 +19,12 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 		throw std::runtime_error("Failed to create GLFW window");
 	glfwMakeContextCurrent(_window);
 	gladLoadGL();
-	// stbi_set_flip_vertically_on_load(true);
-	// // Set the viewport to the size of the window
-	// glViewport(0, 0 ,_width, _height);
-	//
-	// _shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
-	//
+	stbi_set_flip_vertically_on_load(true);
+	// Set the viewport to the size of the window
+	glViewport(0, 0 ,_width, _height);
+
+	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
+
 	// std::vector<Vertex> vertices = {
 	// 	Vertex{glm::vec3(-0.5f, 0.0f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.83f, 0.70f, 0.44f), glm::vec2(0.0f, 0.0f)},
 	// 	Vertex{glm::vec3(-0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.83f, 0.70f, 0.44f), glm::vec2(5.0f, 0.0f)},
@@ -42,16 +42,17 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	// 	3, 0, 4
 	// };
 	//
-	// std::vector<Texture> textures = {
-	// 	Texture("./resources/textures/image.png", "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE)
-	// };
-	//
-	// // _mesh = Mesh(_objects[0]);
+	std::vector<Texture> textures = {
+		Texture("./resources/textures/image.png", "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE)
+	};
+
+	_objects[0].setTextures(textures);
+	_mesh = Mesh(_objects[0]);
 	// _mesh = Mesh(vertices, indices, textures);
-	//
-	// _camera = Camera(_width, _height, glm::vec3(0.0f, 0.0f, 2.0f));
-	// glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	// glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
+
+	_camera = Camera(_width, _height, glm::vec3(0.0f, 0.0f, 2.0f));
+	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
 }
 
 Scop::Scop(const Scop& other) {

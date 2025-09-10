@@ -73,6 +73,18 @@ void Mesh::draw(const Shader &shader, const Camera &camera) {
 	glDrawElements(GL_TRIANGLES, _indices.size(), GL_UNSIGNED_INT, 0);
 }
 
+void Mesh::setVertices(const std::vector<Vertex> &vertices) {
+	_vertices = vertices;
+}
+
+void Mesh::setIndices(const std::vector<GLuint> &indices) {
+	_indices = indices;
+}
+
+void Mesh::setTextures(const std::vector<Texture>& textures) {
+	_textures = textures;
+}
+
 void Mesh::destroy() {
 	_vao.deleteVAO();
 	_vbo.deleteVBO();
