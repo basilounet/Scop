@@ -86,7 +86,8 @@ void Scop::parse(int ac, char **av) {
 	if (ac != 2)
 		throw std::runtime_error("Usage: ./scop <path_to_obj_file>");
 	for (int i = 1; i < ac; ++i) {
-		_objects.emplace_back(av[i]);
+		_objects.emplace_back(Object(av[i]));
+		// _objects.emplace_back(av[i]);
 	}
 }
 
