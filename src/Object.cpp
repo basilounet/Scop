@@ -30,9 +30,15 @@ matMap Object::_materials = {};
 /* ==================== CONSTRUCTORS ==================== */
 
 Object::Object() {
+	_vCount = 0;
+	_vnCount = 0;
+	_vtCount = 0;
 }
 
 Object::Object(const std::string &filepath) {
+	_vCount = 0;
+	_vnCount = 0;
+	_vtCount = 0;
 	parse(filepath);
 }
 
@@ -45,9 +51,10 @@ Object & Object::operator=(const Object &other) {
 		_rawData = other._rawData;
 		_objPath = other._objPath;
 		_vertices = other._vertices;
-		_indices = other._indices;
+		_indicesGroups = other._indicesGroups;
 		_textures = other._textures;
 		_currentMaterial = other._currentMaterial;
+		_currentParsingMaterial = other._currentParsingMaterial;
 		_vCount = other._vCount;
 		_vtCount = other._vtCount;
 		_vnCount = other._vnCount;
@@ -66,8 +73,8 @@ const std::vector<Vertex>& Object::getVertices() {
 	return _vertices;
 }
 
-const std::vector<GLuint>& Object::getIndices() {
-	return _indices;
+const faceGroupMap &Object::getIndicesGroup() {
+	return _indicesGroups;
 }
 
 const std::vector<Texture>& Object::getTextures() {
@@ -78,8 +85,8 @@ void Object::setVertices(const std::vector<Vertex> &vertices) {
 	_vertices = vertices;
 }
 
-void Object::setIndices(const std::vector<GLuint> &indices) {
-	_indices = indices;
+void Object::setIndicesGroup(const faceGroupMap &indices) {
+	_indicesGroups = indices;
 }
 
 void Object::setTextures(const std::vector<Texture> &textures) {
@@ -110,9 +117,10 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 
 	for (size_t i = 0; i < lines.size(); ++i) {
 		elements = split(lines[i], " \t\r\n");
-		if (lines[i].empty() || elements.empty() || elements[0].empty() || elements[0].find('#') != std::string::npos)
+		if (lines[i].empty() || elements.empty() || elements[0].empty() || elements[0][0] == '#')
 			continue ;
 		try {
+
 			if (func.find(elements[0]) != func.end())
 				(this->*(func.at(elements[0])))(elements, i + 1);
 			else
@@ -151,32 +159,26 @@ std::vector<std::string> Object::split(const std::string &str, const std::string
 	return tokens;
 }
 
-void Object::checkNumber(const std::string &str, const int type, const size_t lineCount) {
-	switch (type) {
-		case INT:
-			if (str.find_first_not_of("+-0123456789") != std::string::npos ||
-				str == "+" || str == "-" ||
-				(str.rfind('+') != std::string::npos && str.rfind('+') != 0) ||
-				(str.rfind('-') != std::string::npos && str.rfind('-') != 0))
-				throw std::runtime_error(RED + str + YELLOW" : not a valid integer value at line ===> "
-					LIGTH_BLUE + std::to_string(lineCount) + RESET);
-			break ;
-		case POSITIVE_INT:
-			if (str.find_first_not_of("0123456789") != std::string::npos)
-				throw std::runtime_error(RED + str + YELLOW" : not a valid positive integer value at line ===> "
-					LIGTH_BLUE + std::to_string(lineCount) + RESET);
-			break ;
-		case FLOAT:
-			if (str.find_first_not_of("+-0123456789.") != std::string::npos ||
-				str.find('.') != str.rfind('.') || str == "." || str == "+" || str == "-" ||
-				(str.rfind('+') != std::string::npos && str.rfind('+') != 0) ||
-				(str.rfind('-') != std::string::npos && str.rfind('-') != 0))
-				throw std::runtime_error(RED + str + YELLOW" : not a valid float value at line ===> "
-					LIGTH_BLUE + std::to_string(lineCount) + RESET);
-			break ;
-		default:
-			break ;
-	}
+void Object::checkNumber(const std::string &str, const int type, const int sign, const size_t lineCount) {
+	if (str.find_first_not_of("+-0123456789.") != std::string::npos || str == "+" || str == "-" || str == ".")
+		throw std::runtime_error(RED + str + YELLOW" : invalid char in number value at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if (type == INT && (str.find('.') != std::string::npos))
+		throw std::runtime_error(RED + str + YELLOW" : not an integer value at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if (type == FLOAT && (str.find('.') != str.rfind('.')))
+		throw std::runtime_error(RED + str + YELLOW" : invalid float value at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if (sign == POSITIVE && str.find('-') != std::string::npos)
+		throw std::runtime_error(RED + str + YELLOW" : not a positive value at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if (sign == NEGATIVE && str.find('-') == std::string::npos)
+		throw std::runtime_error(RED + str + YELLOW" : not a negative value at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if ((str.rfind('+') != std::string::npos && str.rfind('+') != 0) ||
+		(str.rfind('-') != std::string::npos && str.rfind('-') != 0))
+		throw std::runtime_error(RED + str + YELLOW" : invalid sign position at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 }
 
 
@@ -189,41 +191,71 @@ void Object::parseVertex(const std::vector<std::string>& tokens, const size_t li
 		throw std::runtime_error(RED"Invalid number of values for vertex at line" YELLOW " ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
-		checkNumber(tokens[i], FLOAT, lineCount);
+		checkNumber(tokens[i], FLOAT, ANY, lineCount);
 		vec[i - 1] = std::stof(tokens[i]);
 		// std::cout << "tokens["<<i<<"]: " << tokens[i] << std::endl;
 	}
 	// std::cout << vec.x << ',' << vec.y << ',' << vec.z << std::endl;
 
-	if (_vCount <= _vertices.size())
+	if (_vCount < _vertices.size())
 		_vertices[_vCount].position = vec;
 	else
-		_vertices.push_back(Vertex{glm::vec3(vec), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.5f, 0.80f, 0.9f), glm::vec2(0.0f, 0.0f)});
+		_vertices.push_back(Vertex{glm::vec3(vec), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.5f, 0.80f, 0.9f),
+			glm::vec2(
+			vec.z,
+			vec.y)});
 	++_vCount;
 }
 
 void Object::parseTexCoord(const std::vector<std::string>& tokens, const size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() < 3 || tokens.size() > 4)
+		throw std::runtime_error(RED"Invalid number of values for vt at line" YELLOW " ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, ANY, lineCount);
+	checkNumber(tokens[2], FLOAT, ANY, lineCount);
+	if (_vtCount < _vertices.size())
+		_vertices[_vtCount].texCoord = glm::vec2(std::stof(tokens[1]), std::stof(tokens[2]));
+	else
+		_vertices.push_back(Vertex{glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.5f, 0.80f, 0.9f),
+			glm::vec2(std::stof(tokens[1]), std::stof(tokens[2]))});
+	++_vtCount;
 }
 
 void Object::parseNormal(const std::vector<std::string>& tokens, const size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 4)
+		throw std::runtime_error(RED "Invalid number of values for vn at line" YELLOW " ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, ANY, lineCount);
+	checkNumber(tokens[2], FLOAT, ANY, lineCount);
+	checkNumber(tokens[3], FLOAT, ANY, lineCount);
+	if (_vnCount < _vertices.size())
+		_vertices[_vnCount].normal = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	else
+		_vertices.push_back(Vertex{glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3])),
+			glm::vec3(0.5f, 0.80f, 0.9f),
+			glm::vec2(0.0f, 0.0f)});
+	++_vnCount;
 }
 
 void Object::parseFace(const std::vector<std::string>& tokens, const size_t lineCount) {
+	std::vector<std::string> parts;
 	int	numbers[tokens.size() - 1];
 
 	if (tokens.size() < 4)
 		throw std::runtime_error(RED"Invalid number of values for face at line" YELLOW " ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
-		checkNumber(tokens[i], POSITIVE_INT, lineCount);
-		numbers[i - 1] = std::stoi(tokens[i]);
+		parts = split(tokens[i], "/", true); // TODO : handle v/vt/vn v//vn v/vt
+		checkNumber(parts[0], INT, POSITIVE, lineCount);
+		numbers[i - 1] = std::stoi(parts[0]);
 	}
 	for (size_t i = 1; i < tokens.size() - 2; ++i) {
-		_indices.push_back(numbers[0] - 1);
-		_indices.push_back(numbers[i] - 1);
-		_indices.push_back(numbers[i + 1] - 1);
+		_indicesGroups[_currentMaterial]._indices.push_back(numbers[0] - 1);
+		_indicesGroups[_currentMaterial]._indices.push_back(numbers[i] - 1);
+		_indicesGroups[_currentMaterial]._indices.push_back(numbers[i + 1] - 1);
 	}
 }
 
@@ -238,7 +270,6 @@ void Object::parseMaterialLib(const std::vector<std::string>& tokens, const size
 			std::filesystem::path fileDir = std::filesystem::path(_objPath).parent_path();
 			std::filesystem::path fullPath = fileDir / tokens[i];
 			parse(fullPath.string(), _matFunctionParser, lineCount);
-			// parse(tokens[i], _matFunctionParser, lineCount);
 		}
 		catch (std::exception& e) {
 			std::cerr << e.what() << std::endl;
@@ -268,42 +299,82 @@ void Object::parseNewMaterial(const std::vector<std::string> &tokens, size_t lin
 		throw std::runtime_error(RED "WARNING : Material " LIGTH_BLUE + tokens[1] +
 			YELLOW" already exists at line ===> " LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	_materials[tokens[1]] = MaterialData();
-	_materials[tokens[1]]._mapKd = "./resources/textures/image.png";
+	// _materials[tokens[1]]._mapKd = "./resources/textures/image.png";
+	_currentParsingMaterial = _materials[tokens[1]];
 }
 
 void Object::parseNs(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 2)
+		throw std::runtime_error(RED "Invalid number of values specified for Ns at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._ns = std::stof(tokens[1]);
 }
 
 void Object::parseKa(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 4)
+		throw std::runtime_error(RED "Invalid number of values specified for Ka at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._ka = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKd(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 4)
+		throw std::runtime_error(RED "Invalid number of values specified for Kd at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._kd = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKs(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 4)
+		throw std::runtime_error(RED "Invalid number of values specified for Ks at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._ks = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKe(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 4)
+		throw std::runtime_error(RED "Invalid number of values specified for Ke at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
+	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._ke = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseNi(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 2)
+		throw std::runtime_error(RED "Invalid number of values specified for Ni at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._ni = std::stof(tokens[1]);
 }
 
 void Object::parseD(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 2)
+		throw std::runtime_error(RED "Invalid number of values specified for d at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
+	_currentParsingMaterial._d = std::stof(tokens[1]);
 }
 
 void Object::parseMapKd(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
+	if (tokens.size() != 2)
+		throw std::runtime_error(RED "Invalid number of values specified for map_Kd at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	_currentParsingMaterial._mapKd = tokens[1];
 }
 
-const MaterialData & Object::getMaterial(const std::string &name) const {
+const MaterialData & Object::getMaterial(const std::string &name) {
 	if (_materials.find(name) != _materials.end())
 		return _materials[name];
 	throw std::runtime_error(RED "Material " + name + " not loaded or doesn't exists." RESET);

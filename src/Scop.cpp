@@ -25,25 +25,8 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
 
-	// std::vector<Vertex> vertices = {
-	// 	Vertex{glm::vec3(-0.5f, 0.0f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.83f, 0.70f, 0.44f), glm::vec2(0.0f, 0.0f)},
-	// 	Vertex{glm::vec3(-0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.83f, 0.70f, 0.44f), glm::vec2(5.0f, 0.0f)},
-	// 	Vertex{glm::vec3(0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.83f, 0.70f, 0.44f), glm::vec2(0.0f, 0.0f)},
-	// 	Vertex{glm::vec3(0.5f, 0.0f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.83f, 0.70f, 0.44f), glm::vec2(5.0f, 0.0f)},
-	// 	Vertex{glm::vec3(0.0f, 0.8f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.92f, 0.86f, 0.76f), glm::vec2(2.5f, 5.0f)},
-	// };
-	//
-	// std::vector<GLuint> indices = {
-	// 	0, 1, 2,
-	// 	0, 2, 3,
-	// 	0, 1, 4,
-	// 	1, 2, 4,
-	// 	2, 3, 4,
-	// 	3, 0, 4
-	// };
-	//
 	std::vector<Texture> textures = {
-		Texture("./resources/textures/image.png", "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE)
+		Texture("./resources/textures/jiji.png", "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE)
 	};
 
 	_objects[0].setTextures(textures);
@@ -114,7 +97,7 @@ void Scop::gameLoop() {
 		_camera.matrix(_shaderProgram, "camMatrix");
 
 		glm::mat4 model = glm::mat4(1.0f);
-		// rotation += _deltaTime * 5.0f;
+		rotation += _deltaTime * 15.0f;
 		model = glm::rotate(model, glm::radians((float)rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 		_mesh.draw(_shaderProgram, _camera);
 
