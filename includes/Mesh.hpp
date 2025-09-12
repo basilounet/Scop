@@ -19,8 +19,7 @@
 class Mesh {
 private:
 	std::vector<Vertex>		_vertices;
-	std::vector<GLuint>		_indices;
-	std::vector<Texture>	_textures;
+	faceGroupMap			_indicesGroup;
 
 	VAO						_vao;
 	VBO						_vbo;
@@ -29,7 +28,7 @@ private:
 
 public:
 	Mesh();
-	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures);
+	Mesh(const std::vector<Vertex>& vertices, const faceGroupMap& indicesGroup);
 	explicit Mesh(Object& object);
 	explicit Mesh(const Object & object);
 	Mesh(const Mesh& other);
@@ -40,8 +39,7 @@ public:
 	void	draw(const Shader& shader, const Camera& camera);
 
 	void	setVertices(const std::vector<Vertex>& vertices);
-	void	setIndices(const std::vector<GLuint>& indices);
-	void	setTextures(const std::vector<Texture>& textures);
+	void	setIndices(const faceGroupMap& indices);
 
 	void	destroy();
 };

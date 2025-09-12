@@ -6,6 +6,8 @@ d 1
 illum 1
 Ka 0 0 0
 Ks 0 0 0
+map_Kd wood.png
+
 newmtl Tree
 Kd 0.256861 0.440506 0.110769
 Ns 256
@@ -13,3 +15,4 @@ d 1
 illum 1
 Ka 0 0 0
 Ks 0 0 0
+map_Kd leaves.png

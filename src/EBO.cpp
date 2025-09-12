@@ -9,10 +9,15 @@
 EBO::EBO() : _id(0) {
 }
 
-EBO::EBO(const std::vector<GLuint>& indices) : _id(0) {
+EBO::EBO(const faceGroupMap& indices) : _id(0) {
 	glGenBuffers(1, &_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+	std::vector<GLuint> buffers;
+	for (auto &group : indices) {
+		buffers.insert(buffers.end(), group.second._indices.begin(), group.second._indices.end());
+	}
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffers.size() * sizeof(GLuint), buffers.data(), GL_STATIC_DRAW);
 }
 
 EBO::EBO(const EBO &other) {

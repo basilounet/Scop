@@ -7,6 +7,7 @@
 
 # include "glad/glad.h"
 # include <vector>
+# include <Object.hpp>
 
 class EBO {
 private:
@@ -14,7 +15,7 @@ private:
 
 public:
 	EBO();
-	EBO(const std::vector<GLuint>& indices);
+	EBO(const faceGroupMap& indices);
 	EBO(const EBO& other);
 	~EBO();
 

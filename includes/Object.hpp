@@ -25,6 +25,7 @@
 class Object;
 
 struct MaterialData {
+	std::string	_name;
 	float		_ns;
 	glm::vec3	_ka;
 	glm::vec3	_kd;
@@ -32,30 +33,31 @@ struct MaterialData {
 	glm::vec3	_ke;
 	float		_ni;
 	float		_d;
-	std::string	_mapKd = "./resources/textures/image2.png";
+	std::string	_mapKd = "jiji.png";
+	Texture		_mapKdTexture;
 };
 
 struct FaceGroup {
 	std::vector<GLuint> _indices;
-	MaterialData		_material;
+	MaterialData*		_material = nullptr;
 };
 
 typedef std::map<std::string, void (Object::*)(const std::vector<std::string>& tokens, size_t line)> mapFunc;
 typedef std::map<std::string, MaterialData> matMap;
-typedef std::map<MaterialData, FaceGroup> faceGroupMap;
+typedef std::map<std::string, FaceGroup> faceGroupMap;
 
 class Object {
 private:
 	static matMap						_materials;
+	static std::string					_texturePath;
 
 	std::string							_rawData;
 	std::string							_objPath;
 	std::vector<Vertex>					_vertices;
 	faceGroupMap						_indicesGroups;
-	std::vector<Texture>				_textures;
 
-	MaterialData						_currentMaterial;
-	MaterialData						_currentParsingMaterial;
+	MaterialData*						_currentMaterial;
+	MaterialData*						_currentParsingMaterial;
 	size_t								_vCount;
 	size_t								_vtCount;
 	size_t								_vnCount;
@@ -69,13 +71,14 @@ public:
 
 	const std::vector<Vertex>&			getVertices();
 	const faceGroupMap&					getIndicesGroup();
-	const std::vector<Texture>&			getTextures();
 
 	void								setVertices(const std::vector<Vertex>& vertices);
 	void								setIndicesGroup(const faceGroupMap &indices);
-	void								setTextures(const std::vector<Texture>& textures);
 
-	void parse(const std::string& filepath, const mapFunc& func = _objFunctionParser, size_t lineCount = 0);
+	void								parse(const std::string& filepath,
+												const mapFunc& func = _objFunctionParser,
+												size_t lineCount = 0);
+	static void							createTexture(); // to be called after parsing all .mtl files
 
 private:
 	static std::vector<std::string>		split(const std::string& str, const std::string& delims, const bool keepEmpty = false);
@@ -89,6 +92,7 @@ private:
 	void								parseUseMaterial(const std::vector<std::string>& tokens, size_t lineCount);
 
 	void								parseNewMaterial(const std::vector<std::string>& tokens, size_t lineCount);
+	void								checkCurrentParsingMaterial(size_t lineCount);
 	void								parseNs(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseKa(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseKd(const std::vector<std::string>& tokens, size_t lineCount);
@@ -97,7 +101,7 @@ private:
 	void								parseNi(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseD(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseMapKd(const std::vector<std::string>& tokens, size_t lineCount);
-	static const MaterialData&			getMaterial(const std::string &name);
+	static MaterialData*			getMaterial(const std::string &name);
 
 	static const mapFunc				_objFunctionParser;
 	static const mapFunc				_matFunctionParser;

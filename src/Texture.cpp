@@ -6,15 +6,15 @@
 
 /* ==================== CONSTRUCTORS ==================== */
 
-Texture::Texture() : _imgWidth(0), _imgHeight(0), _numColCh(0), _imgData(nullptr), _textureID(0) {
-
+Texture::Texture() : _imgWidth(0), _imgHeight(0), _numColCh(0), _imgData(nullptr), _textureID(0), _type("none"), _unit(0) {
+// std::cout << "Texture::Texture()" << std::endl;
 }
 
 Texture::Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum format, const GLenum pixelType) {
 	_type = texType;
 	_imgData = stbi_load(path.c_str(), &_imgWidth, &_imgHeight, &_numColCh, 0);
 	if (!_imgData)
-		throw std::runtime_error("Failed to load image");
+		throw std::runtime_error(RED "Failed to load texture: " MAGENTA + path + RESET);
 
 	glGenTextures(1, &_textureID);
 	glActiveTexture(GL_TEXTURE0 + slot);
@@ -29,11 +29,11 @@ Texture::Texture(const std::string &path, const std::string& texType, const GLui
 
 	stbi_image_free(_imgData);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
 }
 
 Texture::Texture(const Texture &other) {
 	*this = other;
+
 }
 
 Texture & Texture::operator=(const Texture &other) {
@@ -55,7 +55,7 @@ Texture::~Texture() {
 /* ==================== GETTERS / SETTERS ==================== */
 
 std::string Texture::getType() {
-	return (_type);
+	return _type;
 }
 
 /* ==================== METHODS ==================== */
@@ -75,6 +75,8 @@ void Texture::deleteTexture() const {
 
 void Texture::texUnit(const Shader& shader, const std::string& uniform, const GLuint unit) {
 	// Gets the location of the uniform
+	// std::cout << "Setting texture unit " << unit << " to " << uniform << std::endl;
+	// std::cout << "texType: " << _type << "$" << std::endl;
 	GLuint texUni = glGetUniformLocation(shader.getId(), uniform.c_str());
 	// Shader needs to be activated before changing the value of a uniform
 	shader.activate();

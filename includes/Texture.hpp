@@ -10,7 +10,9 @@
 # include <glad/glad.h>
 # include <GLFW/glfw3.h>
 # include "stb_image.h"
+
 # include <Shader.hpp>
+# include <Colors.hpp>
 
 class Texture {
 private:

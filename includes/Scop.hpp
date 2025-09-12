@@ -29,6 +29,8 @@ private:
 	Camera						_camera;
 	std::vector<Object>			_objects;
 	Mesh						_mesh;
+	GLuint						_modelUni;
+	float						_rotation;
 
 public:
 	Scop(int ac, char **av);
@@ -39,6 +41,10 @@ public:
 
 	void	parse(int ac, char **av);
 	void	gameLoop();
+
+private:
+	void	draw();
+	// void	framebufferResize(GLFWwindow *window, int w, int h);
 };
 
 

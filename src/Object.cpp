@@ -15,17 +15,20 @@ const mapFunc Object::_objFunctionParser = {
 };
 
 const mapFunc Object::_matFunctionParser = {
-	{"newmtl", &Object::parseNewMaterial},
-	{"Ns", &Object::parseNs},
-	{"Ka", &Object::parseKa},
-	{"Kd", &Object::parseKd},
-	{"Ks", &Object::parseKs},
-	{"Ke", &Object::parseKe},
-	{"Ni", &Object::parseNi},
-	{"d", &Object::parseD},
-	{"map_Kd", &Object::parseMapKd}
+			{"newmtl", &Object::parseNewMaterial},
+			{"Ns", &Object::parseNs},
+			{"Ka", &Object::parseKa},
+			{"Kd", &Object::parseKd},
+			{"Ks", &Object::parseKs},
+			{"Ke", &Object::parseKe},
+			{"Ni", &Object::parseNi},
+			{"d", &Object::parseD},
+			{"map_Kd", &Object::parseMapKd}
 };
-matMap Object::_materials = {};
+matMap Object::_materials = {
+	{"default", MaterialData({._name = "default"})}
+};
+std::string Object::_texturePath = "./resources/textures/";
 
 /* ==================== CONSTRUCTORS ==================== */
 
@@ -33,12 +36,18 @@ Object::Object() {
 	_vCount = 0;
 	_vnCount = 0;
 	_vtCount = 0;
+	_currentMaterial = &_materials["default"];
+	_indicesGroups["default"]._material = _currentMaterial;
+	_currentParsingMaterial = nullptr;
 }
 
 Object::Object(const std::string &filepath) {
 	_vCount = 0;
 	_vnCount = 0;
 	_vtCount = 0;
+	_currentMaterial = &_materials["default"];
+	_indicesGroups["default"]._material = _currentMaterial;
+	_currentParsingMaterial = nullptr;
 	parse(filepath);
 }
 
@@ -52,7 +61,6 @@ Object & Object::operator=(const Object &other) {
 		_objPath = other._objPath;
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
-		_textures = other._textures;
 		_currentMaterial = other._currentMaterial;
 		_currentParsingMaterial = other._currentParsingMaterial;
 		_vCount = other._vCount;
@@ -77,20 +85,12 @@ const faceGroupMap &Object::getIndicesGroup() {
 	return _indicesGroups;
 }
 
-const std::vector<Texture>& Object::getTextures() {
-	return _textures;
-}
-
 void Object::setVertices(const std::vector<Vertex> &vertices) {
 	_vertices = vertices;
 }
 
 void Object::setIndicesGroup(const faceGroupMap &indices) {
 	_indicesGroups = indices;
-}
-
-void Object::setTextures(const std::vector<Texture> &textures) {
-	_textures = textures;
 }
 
 
@@ -130,6 +130,17 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 					// + YELLOW ") at line ===> " LIGTH_BLUE + std::to_string(i + 1) + RESET);
 		}
 		catch (const std::exception &e) {
+			std::cerr << e.what() << std::endl;
+		}
+	}
+}
+
+void Object::createTexture() {
+	for (auto& it : _materials) {
+		try {
+			it.second._mapKdTexture = Texture(_texturePath + it.second._mapKd, "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE);
+		}
+		catch (std::exception& e) {
 			std::cerr << e.what() << std::endl;
 		}
 	}
@@ -252,10 +263,12 @@ void Object::parseFace(const std::vector<std::string>& tokens, const size_t line
 		checkNumber(parts[0], INT, POSITIVE, lineCount);
 		numbers[i - 1] = std::stoi(parts[0]);
 	}
+	if (!_currentMaterial)
+		_currentMaterial = &_materials["default"];
 	for (size_t i = 1; i < tokens.size() - 2; ++i) {
-		_indicesGroups[_currentMaterial]._indices.push_back(numbers[0] - 1);
-		_indicesGroups[_currentMaterial]._indices.push_back(numbers[i] - 1);
-		_indicesGroups[_currentMaterial]._indices.push_back(numbers[i + 1] - 1);
+		_indicesGroups[_currentMaterial->_name]._indices.push_back(numbers[0] - 1);
+		_indicesGroups[_currentMaterial->_name]._indices.push_back(numbers[i] - 1);
+		_indicesGroups[_currentMaterial->_name]._indices.push_back(numbers[i + 1] - 1);
 	}
 }
 
@@ -284,6 +297,7 @@ void Object::parseUseMaterial(const std::vector<std::string> &tokens, size_t lin
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	// std::cout << YELLOW "Using material: " MAGENTA + tokens[1] + RESET << std::endl;
 	_currentMaterial = getMaterial(tokens[1]);
+	_indicesGroups[_currentMaterial->_name]._material = _currentMaterial;
 }
 
 
@@ -297,85 +311,100 @@ void Object::parseNewMaterial(const std::vector<std::string> &tokens, size_t lin
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	if (_materials.find(tokens[1]) != _materials.end())
 		throw std::runtime_error(RED "WARNING : Material " LIGTH_BLUE + tokens[1] +
-			YELLOW" already exists at line ===> " LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			YELLOW" already exists. Ignoring this at line ===> " LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	// std::cout << RED "New MaterialData" RESET << std::endl;
 	_materials[tokens[1]] = MaterialData();
-	// _materials[tokens[1]]._mapKd = "./resources/textures/image.png";
-	_currentParsingMaterial = _materials[tokens[1]];
+	_materials[tokens[1]]._name = tokens[1];
+	_currentParsingMaterial = &_materials[tokens[1]];
+}
+
+void Object::checkCurrentParsingMaterial(size_t lineCount) {
+	if (!_currentParsingMaterial)
+		throw std::runtime_error(RED "No material currently being parsed" YELLOW " at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 }
 
 void Object::parseNs(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for Ns at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._ns = std::stof(tokens[1]);
+	_currentParsingMaterial->_ns = std::stof(tokens[1]);
 }
 
 void Object::parseKa(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Ka at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._ka = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_ka = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKd(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Kd at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._kd = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_kd = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKs(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Ks at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._ks = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_ks = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKe(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Ke at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._ke = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_ke = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseNi(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for Ni at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._ni = std::stof(tokens[1]);
+	_currentParsingMaterial->_ni = std::stof(tokens[1]);
 }
 
 void Object::parseD(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for d at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial._d = std::stof(tokens[1]);
+	_currentParsingMaterial->_d = std::stof(tokens[1]);
 }
 
 void Object::parseMapKd(const std::vector<std::string> &tokens, size_t lineCount) {
+	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for map_Kd at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
-	_currentParsingMaterial._mapKd = tokens[1];
+	_currentParsingMaterial->_mapKd = tokens[1];
 }
 
-const MaterialData & Object::getMaterial(const std::string &name) {
+MaterialData* Object::getMaterial(const std::string &name) {
 	if (_materials.find(name) != _materials.end())
-		return _materials[name];
+		return &_materials[name];
 	throw std::runtime_error(RED "Material " + name + " not loaded or doesn't exists." RESET);
 }
