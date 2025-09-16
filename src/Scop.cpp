@@ -4,6 +4,11 @@
 
 #include <Scop.hpp>
 
+static void framebufferResize(GLFWwindow *window, int w, int h) {
+	(void)window;
+	glViewport(0, 0, w, h);
+}
+
 /* ==================== CONSTRUCTORS ==================== */
 
 Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _deltaTime(0.0f) {
@@ -19,7 +24,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 		throw std::runtime_error("Failed to create GLFW window");
 	glfwMakeContextCurrent(_window);
 	gladLoadGL();
-	glfwMaximizeWindow(_window);
+	// glfwMaximizeWindow(_window);
 	stbi_set_flip_vertically_on_load(true);
 	// Set the viewport to the size of the window
 	glViewport(0, 0 ,_width, _height);
@@ -32,8 +37,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	// std::cout << "Random place: " << _objects[0].getIndicesGroup()_materials["Material"]._mapKdTexture.getType() << std::endl;
 	_mesh = Mesh(_objects[0]);
 	// _mesh = Mesh(vertices, indices, textures);
-
-	_camera = Camera(_width, _height, glm::vec3(0.0f, 0.0f, 2.0f));
+	_camera = Camera(_width, _height, glm::vec3(0.0f, 0.5f, 2.0f));
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
 }
@@ -77,11 +81,6 @@ void Scop::parse(int ac, char **av) {
 	}
 }
 
-void framebufferResize(GLFWwindow *window, int w, int h) {
-	(void)window;
-	glViewport(0, 0, w, h);
-}
-
 void Scop::gameLoop() {
 	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
 	_modelUni = glGetUniformLocation(_shaderProgram.getId(), "model");
@@ -106,11 +105,11 @@ void Scop::draw() {
 	_shaderProgram.activate();
 
 	_camera.inputs(_window, _deltaTime);
-	_camera.updateMatrix(45.0f, 0.1f, 100.0f);
+	_camera.updateMatrix(45.0f, 0.1f, 1000.0f);
 	_camera.matrix(_shaderProgram, "camMatrix");
 
 	glm::mat4 model = glm::mat4(1.0f);
-	_rotation += _deltaTime * 15.0f;
+	// _rotation += _deltaTime * 15.0f;
 	model = glm::rotate(model, glm::radians(_rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 	_mesh.draw(_shaderProgram, _camera);
 

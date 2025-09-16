@@ -1,0 +1,87 @@
+# Vertex & texture organization:
+
+# E---F+D'--B'
+# | 1  |  4 |      A------B            1 = back   (Z+) flipped vertically
+# A---B+H'--F'    /|     /|            2 = top    (Y+) normal
+# | 2  |  5 |    C------D |    Y Z     3 = front  (Z-) normal
+# C---D+G'--E'   | E----|-F    |/      4 = right  (X+) normal
+# | 3  |  6 |    |/     |/     +--X    5 = bottom (Y-) rotated 90° clockwise
+# G---H+C'--A'   G------H              6 = left   (X-) flipped vertically
+
+# 8 corners of the cube in the order detailed above (ABCDEFGH)
+v -0.5  0.5  0.5
+v  0.5  0.5  0.5
+v -0.5  0.5 -0.5
+v  0.5  0.5 -0.5
+v -0.5 -0.5  0.5
+v  0.5 -0.5  0.5
+v -0.5 -0.5 -0.5
+v  0.5 -0.5 -0.5
+
+# Another 8 corners for texturing each face independantly, same order
+v -0.5  0.5  0.5
+v  0.5  0.5  0.5
+v -0.5  0.5 -0.5
+v  0.5  0.5 -0.5
+v -0.5 -0.5  0.5
+v  0.5 -0.5  0.5
+v -0.5 -0.5 -0.5
+v  0.5 -0.5 -0.5
+
+# Texture coordinates, first 8 corners are for back, top and front faces
+vt 0.0 0.33333333333
+vt 0.5 0.33333333333
+vt 0.0 0.66666666667
+vt 0.5 0.66666666667
+vt 0.0 0.0
+vt 0.5 0.0
+vt 0.0 1.0
+vt 0.5 1.0
+
+# Next 8 corners are for right, bottom and left faces
+vt 1.0 1.0
+vt 1.0 0.0
+vt 0.5 1.0
+vt 0.5 0.0
+vt 1.0 0.66666666667
+vt 1.0 0.33333333333
+vt 0.5 0.66666666667
+vt 0.5 0.33333333333
+
+# Normals are just diagonals with norm 1 (so each coordinate is 1 / sqrt(3))
+vn -0.57735026919  0.57735026919  0.57735026919
+vn  0.57735026919  0.57735026919  0.57735026919
+vn -0.57735026919  0.57735026919 -0.57735026919
+vn  0.57735026919  0.57735026919 -0.57735026919
+vn -0.57735026919 -0.57735026919  0.57735026919
+vn  0.57735026919 -0.57735026919  0.57735026919
+vn -0.57735026919 -0.57735026919 -0.57735026919
+vn  0.57735026919 -0.57735026919 -0.57735026919
+
+vn -0.57735026919  0.57735026919  0.57735026919
+vn  0.57735026919  0.57735026919  0.57735026919
+vn -0.57735026919  0.57735026919 -0.57735026919
+vn  0.57735026919  0.57735026919 -0.57735026919
+vn -0.57735026919 -0.57735026919  0.57735026919
+vn  0.57735026919 -0.57735026919  0.57735026919
+vn -0.57735026919 -0.57735026919 -0.57735026919
+vn  0.57735026919 -0.57735026919 -0.57735026919
+
+# Face triangles, counterclockwise, in order: top front right bottom back left
+f 2 1 3
+f 3 4 2
+
+f 3 7 8
+f 8 4 3
+
+f 16 14 10
+f 10 12 16
+
+f 15 13 14
+f 14 16 15
+
+f 6 5 1
+f 1 2 6
+
+f 9 13 15
+f 15 11 9

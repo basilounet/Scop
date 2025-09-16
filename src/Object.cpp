@@ -11,7 +11,8 @@ const mapFunc Object::_objFunctionParser = {
 			{"vn", &Object::parseNormal},
 			{"f", &Object::parseFace},
 			{"mtllib", &Object::parseMaterialLib},
-			{"usemtl", &Object::parseUseMaterial}
+			{"usemtl", &Object::parseUseMaterial},
+			{"g", &Object::parseGroup}
 };
 
 const mapFunc Object::_matFunctionParser = {
@@ -33,12 +34,12 @@ std::string Object::_texturePath = "./resources/textures/";
 /* ==================== CONSTRUCTORS ==================== */
 
 Object::Object() {
-	_vCount = 0;
-	_vnCount = 0;
-	_vtCount = 0;
-	_currentMaterial = &_materials["default"];
-	_indicesGroups["default"]._material = _currentMaterial;
-	_currentParsingMaterial = nullptr;
+	// _vCount = 0;
+	// _vnCount = 0;
+	// _vtCount = 0;
+	// _currentMaterial = &_materials["default"];
+	// _indicesGroups["default"]._material = _currentMaterial;
+	// _currentParsingMaterial = nullptr;
 }
 
 Object::Object(const std::string &filepath) {
@@ -49,6 +50,8 @@ Object::Object(const std::string &filepath) {
 	_indicesGroups["default"]._material = _currentMaterial;
 	_currentParsingMaterial = nullptr;
 	parse(filepath);
+	calculateNormals();
+	assignTexCoords();
 }
 
 Object::Object(const Object &other) {
@@ -120,7 +123,7 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 		if (lines[i].empty() || elements.empty() || elements[0].empty() || elements[0][0] == '#')
 			continue ;
 		try {
-
+			// std::cout << "Line["<<i<<"]: " << lines[i] << "$" << std::endl;
 			if (func.find(elements[0]) != func.end())
 				(this->*(func.at(elements[0])))(elements, i + 1);
 			else
@@ -143,6 +146,72 @@ void Object::createTexture() {
 		catch (std::exception& e) {
 			std::cerr << e.what() << std::endl;
 		}
+	}
+}
+
+void Object::calculateNormals() {
+	std::vector<GLuint> indicesBuffer;
+
+	for (auto &group : _indicesGroups) {
+		indicesBuffer.insert(indicesBuffer.end(), group.second._indices.begin(), group.second._indices.end());
+	}
+	// for (auto & vertice : _vertices) {
+		// vertice.normal = glm::vec3(0, 0, 0);
+	// }
+	for (size_t i = 0; i < indicesBuffer.size() - 2; i += 3) {
+		glm::vec3 p = glm::cross(
+			_vertices[indicesBuffer[i + 1]].position - _vertices[indicesBuffer[i]].position,
+			_vertices[indicesBuffer[i + 2]].position - _vertices[indicesBuffer[i]].position);
+		// std::cout << "Face" YELLOW" [" <<indicesBuffer[i]<<", "<<indicesBuffer[i + 1]<<", "<<indicesBuffer[i + 2]<<
+			// "]" RESET " product: " << p.x << ", " << p.y << ", " << p.z << std::endl;
+		_vertices[indicesBuffer[i]].normal += p;
+		_vertices[indicesBuffer[i + 1]].normal += p;
+		_vertices[indicesBuffer[i + 2]].normal += p;
+		// std::cout << LIGTH_BLUE "Vertex " YELLOW"["<<indicesBuffer[i]<<"]" RESET" normal: ["
+		// 	<< _vertices[indicesBuffer[i]].normal.x << ", " << _vertices[indicesBuffer[i]].normal.y << ", "
+		// 	<< _vertices[indicesBuffer[i]].normal.z  << "]" RESET" | "
+		// 	<< LIGTH_BLUE"Vertex " YELLOW"["<<indicesBuffer[i + 1]<<"]" RESET" normal: ["
+		// 	<< _vertices[indicesBuffer[i + 1]].normal.x << ", " << _vertices[indicesBuffer[i + 1]].normal.y << ", "
+		// 	<< _vertices[indicesBuffer[i + 1]].normal.z  << "]" RESET" | "
+		// 	<< LIGTH_BLUE"Vertex " YELLOW"["<<indicesBuffer[i + 2]<<"]" RESET" normal: ["
+		// 	<< _vertices[indicesBuffer[i + 2]].normal.x << ", " << _vertices[indicesBuffer[i + 2]].normal.y << ", "
+		// 	<< _vertices[indicesBuffer[i + 2]].normal.z << "]" RESET << std::endl;
+	}
+	for (size_t i = 0; i < _vertices.size(); ++i) {
+		// if (_vertices[i].normal.x == 0 && _vertices[i].normal.y == 0 && _vertices[i].normal.z == 0)
+			// _vertices[i].normal = glm::vec3(0.0f, 0.0f, 1.0f);
+		_vertices[i].normal = glm::abs(glm::normalize(_vertices[i].normal));
+		// _vertices[i].normal = glm::normalize(_vertices[i].normal);
+		_vertices[i].color = _vertices[i].normal;
+		// std::cout << "Vertex " YELLOW"["<<i<<"]" RESET" normal: "
+			// << _vertices[i].normal.x << ", " << _vertices[i].normal.y << ", " << _vertices[i].normal.z << std::endl;
+	}
+}
+
+void Object::assignTexCoords() {
+	// glm::vec3 n;
+	for (Vertex & v : _vertices) {
+		// n = v.normal;
+		// std::cout << "Normal: " << n.x << ", " << n.y << ", " << n.z << std::endl;
+		// std::cout << "tex: " << v.texCoord.x << ", " << v.texCoord.y << std::endl;
+		// find the major axis
+		// std::vector<float> lst = {std::abs(n.x), std::abs(n.y), std::abs(n.z)};
+		// const long maxI = std::max_element(lst.begin(), lst.end()) - lst.begin();
+		// if (maxI == 0) { // x
+		// 	// std::cout << "Using X axis for texCoord" << std::endl;
+		// 	v.texCoord = glm::vec2(v.position.z, v.position.y);
+		// }
+		// else if (maxI == 1) { // y
+		// 	// std::cout << "Using Y axis for texCoord" << std::endl;
+		// 	v.texCoord = glm::vec2(v.position.x, -v.position.z);
+		// }
+		// else { // z
+		// 	// std::cout << "Using Z axis for texCoord" << std::endl;
+		// 	v.texCoord = glm::vec2(v.position.x, v.position.y);
+		// }
+		// if (v.texCoord.x != 1000000 && v.texCoord.y != -1000000)
+			// continue ;
+		v.texCoord = glm::vec2(v.position.z, v.position.y);
 	}
 }
 
@@ -204,17 +273,13 @@ void Object::parseVertex(const std::vector<std::string>& tokens, const size_t li
 	for (size_t i = 1; i < tokens.size(); ++i) {
 		checkNumber(tokens[i], FLOAT, ANY, lineCount);
 		vec[i - 1] = std::stof(tokens[i]);
-		// std::cout << "tokens["<<i<<"]: " << tokens[i] << std::endl;
 	}
-	// std::cout << vec.x << ',' << vec.y << ',' << vec.z << std::endl;
 
 	if (_vCount < _vertices.size())
 		_vertices[_vCount].position = vec;
 	else
-		_vertices.push_back(Vertex{glm::vec3(vec), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.5f, 0.80f, 0.9f),
-			glm::vec2(
-			vec.z,
-			vec.y)});
+		_vertices.push_back(Vertex{glm::vec3(vec), glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.5f, 0.20f, 0.9f), glm::vec2(1000000, -1000000)});
 	++_vCount;
 }
 
@@ -228,7 +293,7 @@ void Object::parseTexCoord(const std::vector<std::string>& tokens, const size_t 
 		_vertices[_vtCount].texCoord = glm::vec2(std::stof(tokens[1]), std::stof(tokens[2]));
 	else
 		_vertices.push_back(Vertex{glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(1.0f, 0.0f, 0.0f),
 			glm::vec3(0.5f, 0.80f, 0.9f),
 			glm::vec2(std::stof(tokens[1]), std::stof(tokens[2]))});
 	++_vtCount;
@@ -247,7 +312,7 @@ void Object::parseNormal(const std::vector<std::string>& tokens, const size_t li
 		_vertices.push_back(Vertex{glm::vec3(0.0f, 0.0f, 0.0f),
 			glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3])),
 			glm::vec3(0.5f, 0.80f, 0.9f),
-			glm::vec2(0.0f, 0.0f)});
+			glm::vec2(1000000, -1000000)});
 	++_vnCount;
 }
 
@@ -260,6 +325,9 @@ void Object::parseFace(const std::vector<std::string>& tokens, const size_t line
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
 		parts = split(tokens[i], "/", true); // TODO : handle v/vt/vn v//vn v/vt
+		if (parts[0].empty())
+			throw std::runtime_error(RED "Missing vertex index at line" YELLOW " ===> "
+				LIGTH_BLUE + std::to_string(lineCount) + RESET);
 		checkNumber(parts[0], INT, POSITIVE, lineCount);
 		numbers[i - 1] = std::stoi(parts[0]);
 	}
@@ -270,6 +338,10 @@ void Object::parseFace(const std::vector<std::string>& tokens, const size_t line
 		_indicesGroups[_currentMaterial->_name]._indices.push_back(numbers[i] - 1);
 		_indicesGroups[_currentMaterial->_name]._indices.push_back(numbers[i + 1] - 1);
 	}
+}
+
+void Object::parseGroup(const std::vector<std::string> &tokens, size_t lineCount) {
+	(void)tokens, (void)lineCount;
 }
 
 void Object::parseMaterialLib(const std::vector<std::string>& tokens, const size_t lineCount) {

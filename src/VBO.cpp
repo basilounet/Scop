@@ -25,7 +25,6 @@ VBO::~VBO() {
 
 VBO& VBO::operator=(const VBO& other) {
 	if (this != &other) {
-		// Copy the necessary data from 'other' if needed
 		_id = other._id;
 	}
 	return *this;

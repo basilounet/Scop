@@ -15,6 +15,8 @@
 # include "Texture.hpp"
 # include "VAO.hpp"
 # include "Colors.hpp"
+# include "utils.hpp"
+# include <algorithm>
 
 # define INT 0
 # define FLOAT 1
@@ -75,12 +77,14 @@ public:
 	void								setVertices(const std::vector<Vertex>& vertices);
 	void								setIndicesGroup(const faceGroupMap &indices);
 
-	void								parse(const std::string& filepath,
-												const mapFunc& func = _objFunctionParser,
-												size_t lineCount = 0);
 	static void							createTexture(); // to be called after parsing all .mtl files
 
 private:
+	void								parse(const std::string& filepath,
+												const mapFunc& func = _objFunctionParser,
+												size_t lineCount = 0);
+	void								calculateNormals();
+	void								assignTexCoords();
 	static std::vector<std::string>		split(const std::string& str, const std::string& delims, const bool keepEmpty = false);
 	static void							checkNumber(const std::string& str, const int type, const int sign, size_t lineCount);
 
@@ -88,6 +92,7 @@ private:
 	void								parseTexCoord(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseNormal(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseFace(const std::vector<std::string>& tokens, size_t lineCount);
+	void								parseGroup(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseMaterialLib(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseUseMaterial(const std::vector<std::string>& tokens, size_t lineCount);
 

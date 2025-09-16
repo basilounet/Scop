@@ -12,6 +12,7 @@ SRC = 	$(GLAD_CPP) \
 		Camera.cpp \
 		Mesh.cpp \
 		Object.cpp \
+		utils.cpp \
 
 
 ##========== NAMES ==========##

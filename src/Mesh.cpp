@@ -64,17 +64,19 @@ void Mesh::draw(const Shader &shader, const Camera &camera) {
 	size_t offset = 0;
 	Texture *texture = nullptr;
 	size_t i = 0;
+	glUniform3f(glGetUniformLocation(shader.getId(), "camPos"), camera.getPos().x, camera.getPos().y, camera.getPos().z);
 	for (auto & it : _indicesGroup) {
+
 		texture = &it.second._material->_mapKdTexture;
-		// std::cout << "textureType : " << texture->getType() << std::endl;
 		texture->texUnit(shader, texture->getType() + std::to_string(i), i);
 		texture->bind();
-		glUniform3f(glGetUniformLocation(shader.getId(), "camPos"), camera.getPos().x, camera.getPos().y, camera.getPos().z);
 		glDrawElements(GL_TRIANGLES, it.second._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
+		// glDrawElements(GL_LINE, it.second._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
 		offset += it.second._indices.size();
 		++i;
 		texture->unbind();
 	}
+	_vao.unbind();
 }
 
 void Mesh::setVertices(const std::vector<Vertex> &vertices) {
