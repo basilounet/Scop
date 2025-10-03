@@ -102,9 +102,9 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 		_pos += (_speed + _speedModifier) * glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-		_pos += _speed * -_up * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * -_up * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-		_pos += _speed * _up * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * _up * (float)deltaTime;
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && !_shifted) {
 		_shifted = true;

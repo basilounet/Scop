@@ -34,12 +34,6 @@ std::string Object::_texturePath = "./resources/textures/";
 /* ==================== CONSTRUCTORS ==================== */
 
 Object::Object() {
-	// _vCount = 0;
-	// _vnCount = 0;
-	// _vtCount = 0;
-	// _currentMaterial = &_materials["default"];
-	// _indicesGroups["default"]._material = _currentMaterial;
-	// _currentParsingMaterial = nullptr;
 }
 
 Object::Object(const std::string &filepath) {
@@ -52,6 +46,7 @@ Object::Object(const std::string &filepath) {
 	parse(filepath);
 	calculateNormals();
 	assignTexCoords();
+	calculateCenter();
 }
 
 Object::Object(const Object &other) {
@@ -64,6 +59,7 @@ Object & Object::operator=(const Object &other) {
 		_objPath = other._objPath;
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
+		_centerPoint = other._centerPoint;
 		_currentMaterial = other._currentMaterial;
 		_currentParsingMaterial = other._currentParsingMaterial;
 		_vCount = other._vCount;
@@ -80,12 +76,16 @@ Object::~Object() {
 /* ==================== GETTERS / SETTERS ==================== */
 
 
-const std::vector<Vertex>& Object::getVertices() {
+const std::vector<Vertex>& Object::getVertices() const {
 	return _vertices;
 }
 
-const faceGroupMap &Object::getIndicesGroup() {
+const faceGroupMap &Object::getIndicesGroup() const {
 	return _indicesGroups;
+}
+
+const glm::vec3 & Object::getCenterPoint() const {
+	return _centerPoint;
 }
 
 void Object::setVertices(const std::vector<Vertex> &vertices) {
@@ -167,15 +167,7 @@ void Object::calculateNormals() {
 		_vertices[indicesBuffer[i]].normal += p;
 		_vertices[indicesBuffer[i + 1]].normal += p;
 		_vertices[indicesBuffer[i + 2]].normal += p;
-		// std::cout << LIGTH_BLUE "Vertex " YELLOW"["<<indicesBuffer[i]<<"]" RESET" normal: ["
-		// 	<< _vertices[indicesBuffer[i]].normal.x << ", " << _vertices[indicesBuffer[i]].normal.y << ", "
-		// 	<< _vertices[indicesBuffer[i]].normal.z  << "]" RESET" | "
-		// 	<< LIGTH_BLUE"Vertex " YELLOW"["<<indicesBuffer[i + 1]<<"]" RESET" normal: ["
-		// 	<< _vertices[indicesBuffer[i + 1]].normal.x << ", " << _vertices[indicesBuffer[i + 1]].normal.y << ", "
-		// 	<< _vertices[indicesBuffer[i + 1]].normal.z  << "]" RESET" | "
-		// 	<< LIGTH_BLUE"Vertex " YELLOW"["<<indicesBuffer[i + 2]<<"]" RESET" normal: ["
-		// 	<< _vertices[indicesBuffer[i + 2]].normal.x << ", " << _vertices[indicesBuffer[i + 2]].normal.y << ", "
-		// 	<< _vertices[indicesBuffer[i + 2]].normal.z << "]" RESET << std::endl;
+
 	}
 	for (size_t i = 0; i < _vertices.size(); ++i) {
 		// if (_vertices[i].normal.x == 0 && _vertices[i].normal.y == 0 && _vertices[i].normal.z == 0)
@@ -189,30 +181,33 @@ void Object::calculateNormals() {
 }
 
 void Object::assignTexCoords() {
-	// glm::vec3 n;
 	for (Vertex & v : _vertices) {
-		// n = v.normal;
-		// std::cout << "Normal: " << n.x << ", " << n.y << ", " << n.z << std::endl;
-		// std::cout << "tex: " << v.texCoord.x << ", " << v.texCoord.y << std::endl;
-		// find the major axis
-		// std::vector<float> lst = {std::abs(n.x), std::abs(n.y), std::abs(n.z)};
-		// const long maxI = std::max_element(lst.begin(), lst.end()) - lst.begin();
-		// if (maxI == 0) { // x
-		// 	// std::cout << "Using X axis for texCoord" << std::endl;
-		// 	v.texCoord = glm::vec2(v.position.z, v.position.y);
-		// }
-		// else if (maxI == 1) { // y
-		// 	// std::cout << "Using Y axis for texCoord" << std::endl;
-		// 	v.texCoord = glm::vec2(v.position.x, -v.position.z);
-		// }
-		// else { // z
-		// 	// std::cout << "Using Z axis for texCoord" << std::endl;
-		// 	v.texCoord = glm::vec2(v.position.x, v.position.y);
-		// }
-		// if (v.texCoord.x != 1000000 && v.texCoord.y != -1000000)
-			// continue ;
 		v.texCoord = glm::vec2(v.position.z, v.position.y);
 	}
+}
+
+void Object::calculateCenter() {
+	glm::vec3 max = glm::vec3(
+		std::max_element(_vertices.begin(), _vertices.end(),
+			[](const Vertex &a, const Vertex &b) {
+			return a.position.x < b.position.x;})->position.x,
+		std::max_element(_vertices.begin(), _vertices.end(),
+			[](const Vertex &a, const Vertex &b) {
+			return a.position.y < b.position.y; })->position.y,
+		std::max_element(_vertices.begin(), _vertices.end(),
+			[](const Vertex &a, const Vertex &b) {
+			return a.position.z < b.position.z;	})->position.z);
+	glm::vec3 min = glm::vec3(
+	std::min_element(_vertices.begin(), _vertices.end(),
+		[](const Vertex &a, const Vertex &b) {
+		return a.position.x < b.position.x;})->position.x,
+	std::min_element(_vertices.begin(), _vertices.end(),
+		[](const Vertex &a, const Vertex &b) {
+		return a.position.y < b.position.y; })->position.y,
+	std::min_element(_vertices.begin(), _vertices.end(),
+		[](const Vertex &a, const Vertex &b) {
+		return a.position.z < b.position.z;	})->position.z);
+	_centerPoint = (min + max) / 2.0f;
 }
 
 std::vector<std::string> Object::split(const std::string &str, const std::string& delims, const bool keepEmpty) {
@@ -239,9 +234,19 @@ std::vector<std::string> Object::split(const std::string &str, const std::string
 	return tokens;
 }
 
+bool isScientificNotationCorrect(const std::string &str, const char sign, size_t start = 0) {
+	size_t pos = str.find(sign, start);
+	if (str.find(sign, pos + 1) != std::string::npos)
+		return false;
+	return (pos != std::string::npos && pos > 0 && str[pos - 1] == 'e');
+}
+
 void Object::checkNumber(const std::string &str, const int type, const int sign, const size_t lineCount) {
-	if (str.find_first_not_of("+-0123456789.") != std::string::npos || str == "+" || str == "-" || str == ".")
+	if (str.find_first_not_of("+-0123456789.e") != std::string::npos || str == "+" || str == "-" || str == ".")
 		throw std::runtime_error(RED + str + YELLOW" : invalid char in number value at line ===> "
+			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if (str.find('e') != str.rfind('e'))
+		throw std::runtime_error(RED + str + YELLOW" : invalid scientific notation at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
 	if (type == INT && (str.find('.') != std::string::npos))
 		throw std::runtime_error(RED + str + YELLOW" : not an integer value at line ===> "
@@ -249,16 +254,16 @@ void Object::checkNumber(const std::string &str, const int type, const int sign,
 	if (type == FLOAT && (str.find('.') != str.rfind('.')))
 		throw std::runtime_error(RED + str + YELLOW" : invalid float value at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
-	if (sign == POSITIVE && str.find('-') != std::string::npos)
+	if (sign == POSITIVE && isScientificNotationCorrect(str, '-'))
 		throw std::runtime_error(RED + str + YELLOW" : not a positive value at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
-	if (sign == NEGATIVE && str.find('-') == std::string::npos)
+	if (sign == NEGATIVE && str.find('-') != 0)
 		throw std::runtime_error(RED + str + YELLOW" : not a negative value at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
-	if ((str.rfind('+') != std::string::npos && str.rfind('+') != 0) ||
-		(str.rfind('-') != std::string::npos && str.rfind('-') != 0))
-		throw std::runtime_error(RED + str + YELLOW" : invalid sign position at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+	if ((str.find('+', 1) != std::string::npos && !isScientificNotationCorrect(str, '+', 1)) ||
+		(str.find('-', 1) != std::string::npos && !isScientificNotationCorrect(str, '-', 1)))
+			throw std::runtime_error(RED + str + YELLOW" : invalid sign position at line ===> "
+				LIGTH_BLUE + std::to_string(lineCount) + RESET);
 }
 
 

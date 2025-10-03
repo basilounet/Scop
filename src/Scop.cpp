@@ -42,11 +42,13 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	_camera = Camera(_width, _height, glm::vec3(0.0f, 0.5f, 2.0f));
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
+	glfwSetFramebufferSizeCallback(_window, framebufferResize);
 
+	glfwSwapInterval(0); // Enable vsync
 	_rotation = 0.0f;
 }
 
-			Scop::Scop(const Scop& other) {
+Scop::Scop(const Scop& other) {
 	*this = other;
 }
 
@@ -88,9 +90,9 @@ void Scop::parse(int ac, char **av) {
 }
 
 void Scop::gameLoop() {
-	std::vector<int> averageFPS;
-	averageFPS.resize(50, 60);
-	int frameCount = 0;
+	std::vector<unsigned short> averageFPS;
+	averageFPS.resize(32, 60);
+	unsigned short frameCount = 0;
 	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
 	_modelUni = glGetUniformLocation(_shaderProgram.getId(), "model");
 
@@ -98,16 +100,17 @@ void Scop::gameLoop() {
 	_shaderProgram.activate();
 	// glUniform1i(tex1IdUni, 0);
 	glEnable(GL_DEPTH_TEST);
-	glfwSetFramebufferSizeCallback(_window, framebufferResize);
 
 	while (!glfwWindowShouldClose(_window)) {
 		draw();
 		// usleep(35000);
-		averageFPS[frameCount] = (int)(1.0f / _deltaTime);
+		averageFPS[frameCount] = (unsigned short)(1.0f / _deltaTime);
 		frameCount = ++frameCount % averageFPS.size();
 		unsigned long sum = 0;
-		for (const int fps : averageFPS)
+		for (const short fps : averageFPS) {
+			// std::cout << "Fps : "  << fps << std::endl;
 			sum += fps;
+		}
 		_characters.render("Speed : " + roundStringFloat(std::to_string(_camera.getTotalSpeed()), 2),
 			0.0f, _height - 20, .35f, glm::vec3(1, 1, 1));
 		_characters.render("FPS : " + std::to_string(sum / averageFPS.size()), 0, _height - 40, .35f, glm::vec3(1, 1, 1));
@@ -139,8 +142,9 @@ void Scop::draw() {
 	_camera.matrix(_shaderProgram, "camMatrix");
 
 	glm::mat4 model = glm::mat4(1.0f);
-	_rotation += _deltaTime * 15.0f;
+	_rotation += _deltaTime * 40.0f;
 	model = glm::rotate(model, glm::radians(_rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::translate(model, -_objects[0].getCenterPoint());
 	_mesh.draw(_shaderProgram, _camera);
 
 	glUniformMatrix4fv(_modelUni, 1, GL_FALSE, glm::value_ptr(model));

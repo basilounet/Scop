@@ -16,6 +16,7 @@ uniform mat4 model;
 void main()
 {
    currentPos = vec3(model * vec4(aPos, 1.0f));
+//   currentPos = aPos;
    normal = aNormal;
    color = aColor;
    texCoord = aTex;

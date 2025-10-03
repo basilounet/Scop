@@ -57,6 +57,7 @@ private:
 	std::string							_objPath;
 	std::vector<Vertex>					_vertices;
 	faceGroupMap						_indicesGroups;
+	glm::vec3							_centerPoint;
 
 	MaterialData*						_currentMaterial;
 	MaterialData*						_currentParsingMaterial;
@@ -71,8 +72,9 @@ public:
 	Object& operator=(const Object& other);
 	~Object();
 
-	const std::vector<Vertex>&			getVertices();
-	const faceGroupMap&					getIndicesGroup();
+	const std::vector<Vertex>&			getVertices()		const;
+	const faceGroupMap&					getIndicesGroup()	const;
+	const glm::vec3&					getCenterPoint()	const;
 
 	void								setVertices(const std::vector<Vertex>& vertices);
 	void								setIndicesGroup(const faceGroupMap &indices);
@@ -85,6 +87,7 @@ private:
 												size_t lineCount = 0);
 	void								calculateNormals();
 	void								assignTexCoords();
+	void								calculateCenter();
 	static std::vector<std::string>		split(const std::string& str, const std::string& delims, const bool keepEmpty = false);
 	static void							checkNumber(const std::string& str, const int type, const int sign, size_t lineCount);
 
