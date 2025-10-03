@@ -30,6 +30,10 @@ VBO& VBO::operator=(const VBO& other) {
 	return *this;
 }
 
+void VBO::createEmptyVBO() {
+	glGenBuffers(1, &_id);
+}
+
 /* ==================== METHODS ==================== */
 
 void VBO::bind() const {

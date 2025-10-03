@@ -12,10 +12,11 @@ Camera::Camera() :
 	_up(glm::vec3(0.0f, 1.0f, 0.0f)),
 	_cameraMatrix(glm::mat4(1.0f)),
 	_width(1400), _height(800),
-	_slowSpeed(4.0f),
-	_fastSpeed(15.0f),
-	_speed(_slowSpeed),
-	_sensitivity(30.0f)
+	_speed(4.0f),
+	_speedModifier(0.0f),
+	_multiplier(4.0f),
+	_sensitivity(30.0f),
+	_shifted(false)
 {
 }
 
@@ -25,10 +26,11 @@ Camera::Camera(const int width, const int height, const glm::vec3& position) :
 	_up(glm::vec3(0.0f, 1.0f, 0.0f)),
 	_cameraMatrix(glm::mat4(1.0f)),
 	_width(width), _height(height),
-	_slowSpeed(4.0f),
-	_fastSpeed(15.0f),
-	_speed(_slowSpeed),
-	_sensitivity(30.0f)
+	_speed(4.0f),
+	_speedModifier(0.0f),
+	_multiplier(4.0f),
+	_sensitivity(30.0f),
+	_shifted(false)
 {
 }
 
@@ -45,8 +47,10 @@ Camera & Camera::operator=(const Camera &other) {
 		_width = other._width;
 		_height = other._height;
 		_speed = other._speed;
-		_fastSpeed = other._fastSpeed;
+		_speedModifier = other._speedModifier;
+		_multiplier = other._multiplier;
 		_sensitivity = other._sensitivity;
+		_shifted = other._shifted;
 	}
 	return *this;
 }
@@ -58,6 +62,14 @@ Camera::~Camera() {
 
 glm::vec3 Camera::getPos() const {
 	return _pos;
+}
+
+float Camera::getSpeed() const {
+	return _speed;
+}
+
+float Camera::getTotalSpeed() const {
+	return _speed + _speedModifier;
 }
 
 /* ==================== METHODS ==================== */
@@ -75,24 +87,35 @@ void Camera::matrix(const Shader &shader, const char *uniform) {
 }
 
 void Camera::inputs(GLFWwindow *window, const double deltaTime) {
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && _speedModifier > 0.1f)
+		_speedModifier -= 0.1f * (_shifted ? _multiplier : 1.0f);
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		_speedModifier += 0.1f * (_shifted ? _multiplier : 1.0f);
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		_pos += _speed * _orientation * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * _orientation * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		_pos += _speed * -_orientation * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * -_orientation * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		_pos += _speed * -glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * -glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		_pos += _speed * glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		_pos += _speed * -_up * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 		_pos += _speed * _up * (float)deltaTime;
 
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		_speed = _fastSpeed;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-		_speed = _slowSpeed;
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && !_shifted) {
+		_shifted = true;
+		_speed *= _multiplier;
+		_speedModifier *= _multiplier;
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE && _shifted) {
+		_shifted = false;
+		_speed /= _multiplier;
+		_speedModifier /= _multiplier;
+	}
 
 	double mouseX, mouseY;
 	glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -117,9 +140,4 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 
 	_orientation = glm::rotate(_orientation, glm::radians(-rotX), _up);
 	glfwSetCursorPos(window, (double)_width / 2, (double)_height / 2);
-
-	// TODO : Move this out of here
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
 }

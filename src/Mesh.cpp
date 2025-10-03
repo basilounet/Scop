@@ -11,7 +11,7 @@ Mesh::Mesh() {
 Mesh::Mesh(const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
 		_vertices(vertices),
 		_indicesGroup(indicesGroup) {
-	_vao = VAO();
+	_vao = VAO(true);
 	_vao.bind();
 
 	_vbo = VBO(_vertices);

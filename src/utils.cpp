@@ -1,24 +1,16 @@
 //
-// Created by bvasseur on 9/12/25.
+// Created by bvasseur on 10/3/25.
 //
 
-# include "utils.hpp"
+#include "utils.hpp"
 
-#include <algorithm>
-#include <vector>
-
-int maxIndex(std::vector<float> &lst) {
-	return std::max_element(lst.begin(), lst.end()) - lst.begin();
+float roundFloat(const float value, const int precision) {
+	const float multiplier = std::pow(10.0f, precision);
+	return std::floor(value * multiplier) / multiplier;
 }
 
-int min(const int *lst, size_t size) {
-	if (!lst || size == 0)
-		return 0;
-	int	min = lst[0];
-
-	for (size_t i = 1; i < size; ++i) {
-		if (lst[i] < min)
-			min = lst[i];
-	}
-	return min;
+std::string roundStringFloat(const std::string& str, const int precision) {
+	if (str.rfind('.') == std::string::npos || str.rfind('.') + precision + 1 >= str.size())
+		return str;
+	return str.substr(0, str.rfind('.') + precision + 1);
 }

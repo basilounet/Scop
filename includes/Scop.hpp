@@ -18,6 +18,8 @@
 # include "Camera.hpp"
 # include "Mesh.hpp"
 # include "Colors.hpp"
+# include "Characters.hpp"
+# include "utils.hpp"
 
 class Scop {
 private:
@@ -31,6 +33,7 @@ private:
 	Mesh						_mesh;
 	GLuint						_modelUni;
 	float						_rotation;
+	Characters					_characters;
 
 public:
 	Scop(int ac, char **av);
@@ -44,7 +47,7 @@ public:
 
 private:
 	void	draw();
-	// void	framebufferResize(GLFWwindow *window, int w, int h);
+	void	inputs();
 };
 
 

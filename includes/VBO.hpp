@@ -28,6 +28,8 @@ public:
 
 	VBO& operator=(const VBO& other);
 
+	void createEmptyVBO();
+
 	void bind() const;
 	void unbind() const;
 	void deleteVBO() const;

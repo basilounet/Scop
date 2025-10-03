@@ -227,10 +227,10 @@ std::vector<std::string> Object::split(const std::string &str, const std::string
 		pos1 = str.find_first_of(delims, pos0);
 		if (pos0 == std::string::npos && pos1 == std::string::npos)
 			break ;
-		if (pos1 == std::string::npos)
-			line = str.substr(pos0, str.length() - pos0);
-		else
-			line = str.substr(pos0, pos1 - pos0);
+		// if (pos1 == std::string::npos)
+		// 	line = str.substr(pos0, pos1);
+		// else
+		line = str.substr(pos0, pos1 - pos0);
 		pos0 = pos1 + 1;
 		tokens.push_back(line);
 		if (pos0 == std::string::npos || pos1 == std::string::npos)

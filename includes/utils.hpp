@@ -5,11 +5,11 @@
 #ifndef SCOP_UTILS_HPP
 # define SCOP_UTILS_HPP
 
-# include "glm/glm.hpp"
-# include <algorithm>
-# include <vector>
+# include <iostream>
+# include <cmath>
+# include <string>
 
-int	maxIndex(std::vector<float> &lst);
-int	min(int *lst, size_t size);
+float		roundFloat(const float value, const int precision);
+std::string	roundStringFloat(const std::string& str, const int precision);
 
 #endif //SCOP_UTILS_HPP

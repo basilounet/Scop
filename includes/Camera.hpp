@@ -24,10 +24,11 @@ private:
 	glm::mat4	_cameraMatrix;
 
 	int			_width, _height;
-	float		_slowSpeed;
-	float		_fastSpeed;
 	float		_speed;
+	float		_speedModifier;
+	float		_multiplier;
 	float		_sensitivity;
+	bool		_shifted;
 
 public:
 	Camera();
@@ -38,6 +39,8 @@ public:
 
 
 	glm::vec3	getPos() const;
+	float		getSpeed() const;
+	float		getTotalSpeed() const;
 
 	void	updateMatrix(const float FOVDeg, const float nearPlane, const float farPlane);
 	void	matrix(const Shader& shader, const char* uniform);

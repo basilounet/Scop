@@ -12,6 +12,7 @@ SRC = 	$(GLAD_CPP) \
 		Camera.cpp \
 		Mesh.cpp \
 		Object.cpp \
+		Characters.cpp \
 		utils.cpp \
 
 
@@ -20,9 +21,10 @@ SRC = 	$(GLAD_CPP) \
 NAME = scop
 SRCS_DIR = src/
 OBJS_DIR = obj/
-INCLUDE_DIR = includes
+INCLUDE_DIR = includes/
 LIBRARIES_DIR = libs/
 GLFW = $(LIBRARIES_DIR)glfw/
+FREE_TYPE = $(LIBRARIES_DIR)freetype-2.14.1/
 GLAD_CPP = glad.cpp # if in a subdirectory, update this
 
 ##========== OBJECTS ==========##
@@ -56,7 +58,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++17
 LDFLAGS = $(LIBS)
-LIBS = -I$(INCLUDE_DIR) -I$(GLFW)include
+LIBS = -I$(INCLUDE_DIR) -I$(GLFW)include -I$(FREE_TYPE)include
 
 ##========== MODES ==========##
 
@@ -89,7 +91,7 @@ endif
 
 ##========== COMPILATION ==========##
 
-all: glfw glad $(NAME)
+all: glfw glad freeType $(NAME)
 
 glfw:
 	@if [ ! -d "$(GLFW)" ]; then \
@@ -112,9 +114,19 @@ glad:
 		rm -rf libs/glad ; \
 	fi
 
+freeType:
+	@if [ ! -d "$(FREE_TYPE)" ]; then \
+		echo "$(DARK_GRAY)Directory freetype-2.14.1 does not exist. Downloading...$(BASE_COLOR)"; \
+		wget https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz -P $(LIBRARIES_DIR); \
+		tar -xvzf $(LIBRARIES_DIR)freetype-2.14.1.tar.gz -C $(LIBRARIES_DIR); \
+		rm -rf $(LIBRARIES_DIR)freetype-2.14.1.tar.gz; \
+	else echo "$(GREEN)freetype-2.14.1 Found, no need to download$(BASE_COLOR)"; \
+	fi
+	@cd $(FREE_TYPE) && make setup ansi && make -j$(nproc) && cd ../..
+
 $(NAME) : $(OBJS)
 	@echo ""
-	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) $(GLFW)build/src/libglfw3.a
+	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
 	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
 
 clean:
@@ -128,6 +140,7 @@ fclean: clean
 	@echo "$(CYAN)Files cleaned$(BASE_COLOR)"
 
 cleanall: fclean
+	@rm -rf $(FREE_TYPE)
 	@rm -rf $(GLFW)
 
 re: fclean all
@@ -444,4 +457,4 @@ define animation_15
 endef
 
 
-.PHONY : all glfw glad clean fclean cleanall re run
+.PHONY : all glfw glad freeType clean fclean cleanall re run

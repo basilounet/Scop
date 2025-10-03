@@ -44,9 +44,9 @@ struct FaceGroup {
 	MaterialData*		_material = nullptr;
 };
 
-typedef std::map<std::string, void (Object::*)(const std::vector<std::string>& tokens, size_t line)> mapFunc;
-typedef std::map<std::string, MaterialData> matMap;
-typedef std::map<std::string, FaceGroup> faceGroupMap;
+using mapFunc = std::map<std::string, void (Object::*)(const std::vector<std::string>& tokens, size_t line)>;
+using matMap = std::map<std::string, MaterialData>;
+using faceGroupMap = std::map<std::string, FaceGroup>;
 
 class Object {
 private:

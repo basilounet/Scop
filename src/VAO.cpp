@@ -10,6 +10,11 @@
 /* ==================== CONSTRUCTORS ==================== */
 
 VAO::VAO() : _id(0) {
+
+}
+
+VAO::VAO(bool b) {
+	(void)b;
 	if (glGenVertexArrays)
 		glGenVertexArrays(1, &_id);
 }
@@ -38,8 +43,8 @@ void VAO::linkAttrib(const VBO &VBO,
 					const GLsizeiptr stride,
 					const void *offset) {
 	VBO.bind();
-	glVertexAttribPointer(layout, nbComponents, type, GL_FALSE, stride, offset);
 	glEnableVertexAttribArray(layout);
+	glVertexAttribPointer(layout, nbComponents, type, GL_FALSE, stride, offset);
 	VBO.unbind();
 }
 

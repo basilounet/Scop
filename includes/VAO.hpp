@@ -14,6 +14,7 @@ private:
 
 public:
 	VAO();
+	VAO(bool b); // Separate from default constructor to generate the VAO id
 	VAO(const VAO &other);
 	~VAO();
 

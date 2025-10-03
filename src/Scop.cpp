@@ -3,6 +3,7 @@
 //
 
 #include <Scop.hpp>
+#include <unistd.h>
 
 static void framebufferResize(GLFWwindow *window, int w, int h) {
 	(void)window;
@@ -30,7 +31,8 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	glViewport(0, 0 ,_width, _height);
 
 	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
-
+	_characters.loadASCII();
+	_characters.initializeGL(_width, _height);
 
 	// _objects[0].setTextures(textures);
 	Object::createTexture();
@@ -40,9 +42,11 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	_camera = Camera(_width, _height, glm::vec3(0.0f, 0.5f, 2.0f));
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
+
+	_rotation = 0.0f;
 }
 
-Scop::Scop(const Scop& other) {
+			Scop::Scop(const Scop& other) {
 	*this = other;
 }
 
@@ -59,18 +63,20 @@ Scop& Scop::operator=(const Scop& other) {
 		_mesh = other._mesh;
 		_modelUni = other._modelUni;
 		_rotation = other._rotation;
+		_characters = other._characters;
 	}
 	return *this;
 }
 
 Scop::~Scop() {
+	_characters.deleteCharacters();
 	_mesh.destroy();
 	_shaderProgram.deleteShader();
 	glfwDestroyWindow(_window);
 	glfwTerminate();
 }
 
-/* ==================== METHODS ==================== */
+/* ==================== PUBLIC METHODS ==================== */
 
 void Scop::parse(int ac, char **av) {
 	if (ac != 2)
@@ -82,11 +88,13 @@ void Scop::parse(int ac, char **av) {
 }
 
 void Scop::gameLoop() {
+	std::vector<int> averageFPS;
+	averageFPS.resize(50, 60);
+	int frameCount = 0;
 	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
 	_modelUni = glGetUniformLocation(_shaderProgram.getId(), "model");
 
-	_lastTime = glfwGetTime();
-	_deltaTime = 0.0f;
+	_lastTime = glfwGetTime() - 1.0f / 60.0f;
 	_shaderProgram.activate();
 	// glUniform1i(tex1IdUni, 0);
 	glEnable(GL_DEPTH_TEST);
@@ -94,8 +102,29 @@ void Scop::gameLoop() {
 
 	while (!glfwWindowShouldClose(_window)) {
 		draw();
+		// usleep(35000);
+		averageFPS[frameCount] = (int)(1.0f / _deltaTime);
+		frameCount = ++frameCount % averageFPS.size();
+		unsigned long sum = 0;
+		for (const int fps : averageFPS)
+			sum += fps;
+		_characters.render("Speed : " + roundStringFloat(std::to_string(_camera.getTotalSpeed()), 2),
+			0.0f, _height - 20, .35f, glm::vec3(1, 1, 1));
+		_characters.render("FPS : " + std::to_string(sum / averageFPS.size()), 0, _height - 40, .35f, glm::vec3(1, 1, 1));
+		_characters.render("Frame Count : " + std::to_string(frameCount), 200, _height - 40, .35f, glm::vec3(1, 1, 1));
+		_characters.render("Pos : " +
+			roundStringFloat(std::to_string(_camera.getPos().x), 2) + "/" +
+			roundStringFloat(std::to_string(_camera.getPos().y), 2) + "/" +
+			roundStringFloat(std::to_string(_camera.getPos().z), 2),
+			0, _height - 60, .35f, glm::vec3(1, 1, 1));
+		glfwSwapBuffers(_window);
+		glfwPollEvents();
 	}
 }
+
+
+/* ==================== PRIVATE METHODS ==================== */
+
 
 void Scop::draw() {
 	_deltaTime = glfwGetTime() - _lastTime;
@@ -104,20 +133,22 @@ void Scop::draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	_shaderProgram.activate();
 
+	inputs();
 	_camera.inputs(_window, _deltaTime);
 	_camera.updateMatrix(45.0f, 0.1f, 1000.0f);
 	_camera.matrix(_shaderProgram, "camMatrix");
 
 	glm::mat4 model = glm::mat4(1.0f);
-	// _rotation += _deltaTime * 15.0f;
+	_rotation += _deltaTime * 15.0f;
 	model = glm::rotate(model, glm::radians(_rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 	_mesh.draw(_shaderProgram, _camera);
 
 	glUniformMatrix4fv(_modelUni, 1, GL_FALSE, glm::value_ptr(model));
+}
 
-	glfwSwapBuffers(_window);
-
-	glfwPollEvents();
+void Scop::inputs() {
+	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(_window, true);
 }
 
 
