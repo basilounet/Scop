@@ -11,5 +11,6 @@
 
 float		roundFloat(const float value, const int precision);
 std::string	roundStringFloat(const std::string& str, const int precision);
+float		lerp(float a, float b, float f);
 
 #endif //SCOP_UTILS_HPP

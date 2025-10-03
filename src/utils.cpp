@@ -14,3 +14,7 @@ std::string roundStringFloat(const std::string& str, const int precision) {
 		return str;
 	return str.substr(0, str.rfind('.') + precision + 1);
 }
+
+float lerp(float a, float b, float f) {
+	return a * (1.0 - f) + (b * f);
+}

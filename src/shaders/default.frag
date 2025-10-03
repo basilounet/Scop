@@ -8,9 +8,9 @@ in vec3 color;
 in vec2 texCoord;
 
 uniform sampler2D texture0;
+uniform float useTexturePercentage;
 
 void main()
 {
-    FragColor = vec4(normal, 1.0f);
-//    FragColor = texture(texture0, texCoord);
+    FragColor = vec4(normal, 1.0f) * (1.0 - useTexturePercentage) + texture(texture0, texCoord) * useTexturePercentage;
 }

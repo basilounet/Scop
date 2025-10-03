@@ -45,6 +45,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	glfwSetFramebufferSizeCallback(_window, framebufferResize);
 
 	glfwSwapInterval(0); // Enable vsync
+
 	_rotation = 0.0f;
 }
 
@@ -64,7 +65,9 @@ Scop& Scop::operator=(const Scop& other) {
 		_objects = other._objects;
 		_mesh = other._mesh;
 		_modelUni = other._modelUni;
+		_usePercentageUni = other._usePercentageUni;
 		_rotation = other._rotation;
+		_usePercentage = other._usePercentage;
 		_characters = other._characters;
 	}
 	return *this;
@@ -95,6 +98,7 @@ void Scop::gameLoop() {
 	unsigned short frameCount = 0;
 	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
 	_modelUni = glGetUniformLocation(_shaderProgram.getId(), "model");
+	_usePercentageUni = glGetUniformLocation(_shaderProgram.getId(), "useTexturePercentage");
 
 	_lastTime = glfwGetTime() - 1.0f / 60.0f;
 	_shaderProgram.activate();
@@ -120,6 +124,7 @@ void Scop::gameLoop() {
 			roundStringFloat(std::to_string(_camera.getPos().y), 2) + "/" +
 			roundStringFloat(std::to_string(_camera.getPos().z), 2),
 			0, _height - 60, .35f, glm::vec3(1, 1, 1));
+
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
 	}
@@ -142,12 +147,19 @@ void Scop::draw() {
 	_camera.matrix(_shaderProgram, "camMatrix");
 
 	glm::mat4 model = glm::mat4(1.0f);
-	_rotation += _deltaTime * 40.0f;
+	// _rotation += _deltaTime * 15.0f;
 	model = glm::rotate(model, glm::radians(_rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::translate(model, -_objects[0].getCenterPoint());
-	_mesh.draw(_shaderProgram, _camera);
+
+	// _usePercentage = ((int)(_usePercentage + _deltaTime * 0.5f * 100) % 100) / 100.0f;
+	_usePercentage = lerp(0.0f, 1.0f, (sin((float)glfwGetTime()) + 1.0f) / 2.0f);
+	// std::cout << "Use percentage: " << _usePercentage << std::endl;
 
 	glUniformMatrix4fv(_modelUni, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform1f(_usePercentageUni, _usePercentage);
+	// glUniformMatrix4fv(_usePercentageUni, 1, GL_FALSE, &_usePercentage);
+
+	_mesh.draw(_shaderProgram, _camera);
 }
 
 void Scop::inputs() {

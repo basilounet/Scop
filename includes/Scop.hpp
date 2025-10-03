@@ -32,7 +32,9 @@ private:
 	std::vector<Object>			_objects;
 	Mesh						_mesh;
 	GLuint						_modelUni;
+	GLuint						_usePercentageUni;
 	float						_rotation;
+	float						_usePercentage;
 	Characters					_characters;
 
 public:
