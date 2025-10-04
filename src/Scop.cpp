@@ -47,6 +47,8 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 	_rotation = 0.0f;
 	_averageFPS.resize(32, 60);
+	_useColorPercentage = 1.0f;
+	_flags = F3 | USE_COLORS;
 }
 
 Scop::Scop(const Scop& other) {
@@ -65,9 +67,11 @@ Scop& Scop::operator=(const Scop& other) {
 		_objects = other._objects;
 		_mesh = other._mesh;
 		_modelUni = other._modelUni;
-		_usePercentageUni = other._usePercentageUni;
 		_rotation = other._rotation;
+		_usePercentageUni = other._usePercentageUni;
 		_usePercentage = other._usePercentage;
+		_useColorPercentageUni = other._useColorPercentageUni;
+		_useColorPercentage = other._useColorPercentage;
 		_characters = other._characters;
 		_flags = other._flags;
 		_keysPressed = other._keysPressed;
@@ -100,6 +104,7 @@ void Scop::gameLoop() {
 	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
 	_modelUni = glGetUniformLocation(_shaderProgram.getId(), "model");
 	_usePercentageUni = glGetUniformLocation(_shaderProgram.getId(), "useTexturePercentage");
+	_useColorPercentageUni = glGetUniformLocation(_shaderProgram.getId(), "useColorPercentage");
 
 	_lastTime = glfwGetTime() - 1.0f / 60.0f;
 	_shaderProgram.activate();
@@ -115,6 +120,16 @@ void Scop::gameLoop() {
 	}
 }
 
+void Scop::framebufferResize(GLFWwindow *window, int w, int h) {
+	Scop* scop = static_cast<Scop*>(glfwGetWindowUserPointer(window));
+
+	glViewport(0, 0, w, h);
+	if (!scop)
+		return ;
+	scop->_width = w;
+	scop->_height = h;
+}
+
 void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
 	Scop* scop = static_cast<Scop*>(glfwGetWindowUserPointer(window));
 
@@ -127,19 +142,11 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 	if (key == GLFW_KEY_F3 && action == GLFW_PRESS)
 		scop->_flags ^= F3;
 	if (key == GLFW_KEY_R && action == GLFW_PRESS)
-		scop->_flags ^= TEX_CHANGE;
+		scop->_flags ^= USE_TEX;
+	if (key == GLFW_KEY_F && action == GLFW_PRESS)
+		scop->_flags ^= USE_COLORS;
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-}
-
-void Scop::framebufferResize(GLFWwindow *window, int w, int h) {
-	Scop* scop = static_cast<Scop*>(glfwGetWindowUserPointer(window));
-
-	glViewport(0, 0, w, h);
-	if (!scop)
-		return ;
-	scop->_width = w;
-	scop->_height = h;
 }
 
 
@@ -149,7 +156,7 @@ void Scop::framebufferResize(GLFWwindow *window, int w, int h) {
 void Scop::draw() {
 	_deltaTime = glfwGetTime() - _lastTime;
 	_lastTime = glfwGetTime();
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.4f, 0.2f, 0.6f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	_shaderProgram.activate();
 
@@ -163,11 +170,12 @@ void Scop::draw() {
 	model = glm::rotate(model, glm::radians(_rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::translate(model, -_objects[0].getCenterPoint());
 
-	_usePercentage = std::clamp(_usePercentage + (_flags & TEX_CHANGE ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
+	_usePercentage = std::clamp(_usePercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
+	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
 
 	glUniformMatrix4fv(_modelUni, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform1f(_usePercentageUni, _usePercentage);
-	// glUniformMatrix4fv(_usePercentageUni, 1, GL_FALSE, &_usePercentage);
+	glUniform1f(_useColorPercentageUni, _useColorPercentage);
 
 	_mesh.draw(_shaderProgram, _camera);
 }
@@ -197,4 +205,6 @@ void Scop::f3Display() {
 		0, _height - 60, .35f, glm::vec3(1, 1, 1));
 	_characters.render("Use percentage : " + roundStringFloat(std::to_string(_usePercentage), 2),
 		0, _height - 80, .35f, glm::vec3(1, 1, 1));
+	_characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
+		0, _height - 100, .35f, glm::vec3(1, 1, 1));
 }

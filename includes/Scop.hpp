@@ -32,9 +32,11 @@ private:
 	std::vector<Object>			_objects;
 	Mesh						_mesh;
 	GLuint						_modelUni;
-	GLuint						_usePercentageUni;
 	float						_rotation;
+	GLuint						_usePercentageUni;
 	float						_usePercentage;
+	GLuint						_useColorPercentageUni;
+	float						_useColorPercentage;
 	Characters					_characters;
 	unsigned int				_flags;
 	unsigned int				_keysPressed;
@@ -52,8 +54,8 @@ public:
 	void	gameLoop();
 
 private:
-	static void	keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void framebufferResize(GLFWwindow *window, int w, int h);
+	static void	keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 	void	draw();
 	void	inputs();
