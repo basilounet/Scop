@@ -36,6 +36,10 @@ private:
 	float						_rotation;
 	float						_usePercentage;
 	Characters					_characters;
+	unsigned int				_flags;
+	unsigned int				_keysPressed;
+	std::vector<unsigned short> _averageFPS;
+	unsigned short				_fpsFrameCount;
 
 public:
 	Scop(int ac, char **av);
@@ -48,8 +52,12 @@ public:
 	void	gameLoop();
 
 private:
+	static void	keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void framebufferResize(GLFWwindow *window, int w, int h);
+
 	void	draw();
 	void	inputs();
+	void	f3Display();
 };
 
 

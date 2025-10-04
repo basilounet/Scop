@@ -15,6 +15,7 @@
 
 # include "Shader.hpp"
 
+# define SHIFT 0b1
 
 class Camera {
 private:
@@ -23,12 +24,12 @@ private:
 	glm::vec3	_up;
 	glm::mat4	_cameraMatrix;
 
-	int			_width, _height;
-	float		_speed;
-	float		_speedModifier;
-	float		_multiplier;
-	float		_sensitivity;
-	bool		_shifted;
+	int				_width, _height;
+	float			_speed;
+	float			_speedModifier;
+	float			_multiplier;
+	float			_sensitivity;
+	unsigned int	_keysPressed;
 
 public:
 	Camera();
@@ -42,9 +43,10 @@ public:
 	float		getSpeed() const;
 	float		getTotalSpeed() const;
 
-	void	updateMatrix(const float FOVDeg, const float nearPlane, const float farPlane);
-	void	matrix(const Shader& shader, const char* uniform);
-	void	inputs(GLFWwindow* window, const double deltaTime);
+	void		updateMatrix(const float FOVDeg, const float nearPlane, const float farPlane);
+	void		matrix(const Shader& shader, const char* uniform);
+	void		inputs(GLFWwindow* window, const double deltaTime);
+	void		inputHooks(GLFWwindow* window, int key, int scancode, int action, int mods);
 };
 
 
