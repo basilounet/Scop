@@ -50,7 +50,7 @@ using faceGroupMap = std::map<std::string, FaceGroup>;
 
 class Object {
 private:
-	static matMap						_materials;
+	static matMap						_materials; // TODO : make it non static
 	static std::string					_texturePath;
 
 	std::string							_rawData;

@@ -207,4 +207,13 @@ void Scop::f3Display() {
 		0, _height - 80, .35f, glm::vec3(1, 1, 1));
 	_characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
 		0, _height - 100, .35f, glm::vec3(1, 1, 1));
+	// _characters.render("Triangles : " + std::to_string(
+		// [](const faceGroupMap &group) {
+			// int sum = 0;
+			// for (const auto& it : group) {
+				// sum += it.second._indices.size();
+			// }
+			// return sum;
+		// }(_objects[0].getIndicesGroup()) / 3),
+		// 0, _height - 120, .35f, glm::vec3(1, 1, 1));
 }

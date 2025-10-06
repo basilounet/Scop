@@ -11,6 +11,7 @@
 
 libs/
 includes/glad
+includes/glm
 src/glad.cpp
 
 scop

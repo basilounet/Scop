@@ -82,7 +82,6 @@ void Characters::loadASCII() {
 }
 
 void Characters::initializeGL(const float width, const float height) {
-	// glUniformMatrix4fv(glGetUniformLocation(shader.getId(), uniform), 1, GL_FALSE, glm::value_ptr(_cameraMatrix));
 	_shader = Shader("./src/shaders/text.vert", "./src/shaders/text.frag");
 	_projection = glm::ortho(0.0f, width, 0.0f, height);
 	glEnable(GL_BLEND);
@@ -110,7 +109,6 @@ void Characters::deleteCharacters() {
 void Characters::render(const std::string& text, float x, float y, float scale, const glm::vec3& color) {
 	// activate corresponding render state
 	_shader.activate();
-	// glUniformMatrix4fv(glGetUniformLocation(_shader.getId(), "projection"), 1, GL_FALSE, glm::value_ptr(_projection));
 	glUniform3f(glGetUniformLocation(_shader.getId(), "textColor"), color.x, color.y, color.z);
 	glActiveTexture(GL_TEXTURE0);
 	_vao.bind();
