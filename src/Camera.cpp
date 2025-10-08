@@ -7,10 +7,10 @@
 /* ==================== CONSTRUCTORS ==================== */
 
 Camera::Camera() :
-	_pos(glm::vec3(0.0f, 0.0f, -2.0f)),
-	_orientation(glm::vec3(0.0f, 0.0f, -1.0f)),
-	_up(glm::vec3(0.0f, 1.0f, 0.0f)),
-	_cameraMatrix(glm::mat4(1.0f)),
+	_pos(Vec3(0.0f, 0.0f, -2.0f)),
+	_orientation(Vec3(0.0f, 0.0f, -1.0f)),
+	_up(Vec3(0.0f, 1.0f, 0.0f)),
+	_cameraMatrix(Mat4(1.0f)),
 	_width(1400), _height(800),
 	_speed(4.0f),
 	_speedModifier(0.0f),
@@ -20,11 +20,11 @@ Camera::Camera() :
 {
 }
 
-Camera::Camera(const int width, const int height, const glm::vec3& position) :
+Camera::Camera(const int width, const int height, const Vec3& position) :
 	_pos(position),
-	_orientation(glm::vec3(0.0f, 0.0f, -1.0f)),
-	_up(glm::vec3(0.0f, 1.0f, 0.0f)),
-	_cameraMatrix(glm::mat4(1.0f)),
+	_orientation(Vec3(0.0f, 0.0f, -1.0f)),
+	_up(Vec3(0.0f, 1.0f, 0.0f)),
+	_cameraMatrix(Mat4(1.0f)),
 	_width(width), _height(height),
 	_speed(4.0f),
 	_speedModifier(0.0f),
@@ -60,7 +60,7 @@ Camera::~Camera() {
 
 /* ==================== GETTERS / SETTERS ==================== */
 
-glm::vec3 Camera::getPos() const {
+Vec3 Camera::getPos() const {
 	return _pos;
 }
 
@@ -75,15 +75,15 @@ float Camera::getTotalSpeed() const {
 /* ==================== METHODS ==================== */
 
 void Camera::updateMatrix(const float FOVDeg, const float nearPlane, const float farPlane) {
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 proj = glm::mat4(1.0f);
-	view = glm::lookAt(_pos, _pos + _orientation, _up);
-	proj = glm::perspective(glm::radians(FOVDeg), (float)_width / (float)_height, nearPlane, farPlane);
-	_cameraMatrix = proj * view;
+	Mat4 viewM = Mat4(1.0f);
+	Mat4 projM = Mat4(1.0f);
+	viewM = lookAt(_pos, _pos + _orientation, _up);
+	projM = perspective(FOVDeg, (float)_width / (float)_height, nearPlane, farPlane);
+	_cameraMatrix = projM * viewM;
 }
 
 void Camera::matrix(const Shader &shader, const char *uniform) {
-	glUniformMatrix4fv(glGetUniformLocation(shader.getId(), uniform), 1, GL_FALSE, glm::value_ptr(_cameraMatrix));
+	glUniformMatrix4fv(glGetUniformLocation(shader.getId(), uniform), 1, GL_FALSE, _cameraMatrix.m);
 }
 
 void Camera::inputs(GLFWwindow *window, const double deltaTime) {
@@ -97,9 +97,9 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		_pos += (_speed + _speedModifier) * -_orientation * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		_pos += (_speed + _speedModifier) * -glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * -normalize(cross(_orientation, _up)) * (float)deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		_pos += (_speed + _speedModifier) * glm::normalize(glm::cross(_orientation, _up)) * (float)deltaTime;
+		_pos += (_speed + _speedModifier) * normalize(cross(_orientation, _up)) * (float)deltaTime;
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		_pos += (_speed + _speedModifier) * -_up * (float)deltaTime;
@@ -123,11 +123,11 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 
 
 
-	glm::vec3 newOrientation = glm::rotate(_orientation, glm::radians(-rotY), glm::normalize(glm::cross(_orientation, _up)));
-	if (!(glm::angle(newOrientation, _up) <= glm::radians(5.0f) || glm::angle(newOrientation, -_up) <= glm::radians(5.0f)))
+	Vec3 newOrientation = rotate(_orientation, radians(-rotY), normalize(cross(_orientation, _up)));
+	if (!(angle(newOrientation, _up) <= radians(5.0f) || angle(newOrientation, -_up) <= radians(5.0f)))
 		_orientation = newOrientation;
 
-	_orientation = glm::rotate(_orientation, glm::radians(-rotX), _up);
+	_orientation = rotate(_orientation, radians(-rotX), _up);
 	glfwSetCursorPos(window, (double)_width / 2, (double)_height / 2);
 }
 

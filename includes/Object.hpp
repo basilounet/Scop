@@ -9,14 +9,15 @@
 # include <string>
 # include <vector>
 # include "glad/glad.h"
-# include "glm/glm.hpp"
 # include <filesystem>
+# include <algorithm>
 
 # include "Texture.hpp"
 # include "VAO.hpp"
 # include "Colors.hpp"
 # include "utils.hpp"
-# include <algorithm>
+# include "math/Vec3.hpp"
+# include "math/Vec2.hpp"
 
 # define INT 0
 # define FLOAT 1
@@ -29,10 +30,10 @@ class Object;
 struct MaterialData {
 	std::string	_name;
 	float		_ns;
-	glm::vec3	_ka;
-	glm::vec3	_kd;
-	glm::vec3	_ks;
-	glm::vec3	_ke;
+	Vec3		_ka;
+	Vec3		_kd;
+	Vec3		_ks;
+	Vec3		_ke;
 	float		_ni;
 	float		_d;
 	std::string	_mapKd = "jiji.png";
@@ -57,7 +58,7 @@ private:
 	std::string							_objPath;
 	std::vector<Vertex>					_vertices;
 	faceGroupMap						_indicesGroups;
-	glm::vec3							_centerPoint;
+	Vec3								_centerPoint;
 
 	MaterialData*						_currentMaterial;
 	MaterialData*						_currentParsingMaterial;
@@ -74,7 +75,7 @@ public:
 
 	const std::vector<Vertex>&			getVertices()		const;
 	const faceGroupMap&					getIndicesGroup()	const;
-	const glm::vec3&					getCenterPoint()	const;
+	const Vec3&							getCenterPoint()	const;
 
 	void								setVertices(const std::vector<Vertex>& vertices);
 	void								setIndicesGroup(const faceGroupMap &indices);

@@ -7,8 +7,6 @@
 
 # include <map>
 # include <string>
-# include "glm/vec2.hpp"
-# include "glm/ext/matrix_clip_space.hpp"
 # include <stdexcept>
 # include "glad/glad.h"
 # include <iostream>
@@ -17,11 +15,14 @@
 
 # include "VAO.hpp"
 # include "Shader.hpp"
+# include "math/Vec2.hpp"
+# include "math/Vec3.hpp"
+# include "math/Mat4.hpp"
 
 struct character {
 	unsigned int id;
-	glm::ivec2 size;
-	glm::ivec2 bearing;
+	Vec2 size;
+	Vec2 bearing;
 	unsigned int advance;
 };
 
@@ -34,7 +35,7 @@ private:
 	VAO							_vao;
 	VBO							_vbo;
 	Shader						_shader;
-	glm::mat4					_projection;
+	Mat4						_projection;
 
 
 public:
@@ -47,7 +48,7 @@ public:
 	void initializeGL(const float width, const float height);
 	void deleteCharacters();
 
-	void render(const std::string& text, float x, float y, float scale, const glm::vec3& color);
+	void render(const std::string &text, float x, float y, float scale, const Vec3 &color);
 };
 
 

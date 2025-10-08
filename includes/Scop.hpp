@@ -11,15 +11,16 @@
 # include <glad/glad.h>
 # include <GLFW/glfw3.h>
 # include "stb_image.h"
-# include <glm/glm.hpp>
-# include <glm/gtc/matrix_transform.hpp>
-# include <glm/gtc/type_ptr.hpp>
 
 # include "Camera.hpp"
 # include "Mesh.hpp"
 # include "Colors.hpp"
 # include "Characters.hpp"
 # include "utils.hpp"
+# include "math/Mat4.hpp"
+# include "math/Vec4.hpp"
+# include "math/Vec3.hpp"
+# include "math/Vec2.hpp"
 
 class Scop {
 private:

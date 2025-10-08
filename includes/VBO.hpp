@@ -6,14 +6,16 @@
 #define VBO_HPP
 
 # include "glad/glad.h"
-# include <glm/glm.hpp>
 # include <vector>
 
+# include "math/Vec2.hpp"
+# include "math/Vec3.hpp"
+
 struct Vertex {
-	glm::vec3 position;
-	glm::vec3 normal;
-	glm::vec3 color;
-	glm::vec2 texCoord;
+	Vec3 position;
+	Vec3 normal;
+	Vec3 color;
+	Vec2 texCoord;
 };
 
 class VBO {

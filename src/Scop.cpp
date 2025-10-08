@@ -35,7 +35,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	// std::cout << "Random place: " << _objects[0].getIndicesGroup()_materials["Material"]._mapKdTexture.getType() << std::endl;
 	_mesh = Mesh(_objects[0]);
 	// _mesh = Mesh(vertices, indices, textures);
-	_camera = Camera(_width, _height, glm::vec3(0.0f, 0.5f, 2.0f));
+	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 2.0f));
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
 	glfwSetFramebufferSizeCallback(_window, framebufferResize);
@@ -165,15 +165,15 @@ void Scop::draw() {
 	_camera.updateMatrix(45.0f, 0.1f, 1000.0f);
 	_camera.matrix(_shaderProgram, "camMatrix");
 
-	glm::mat4 model = glm::mat4(1.0f);
+	Mat4 model = Mat4(1.0f);
 	_rotation += _deltaTime * 5.0f;
-	model = glm::rotate(model, glm::radians(_rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::translate(model, -_objects[0].getCenterPoint());
+	model = rotate(model, radians(_rotation), Vec3(0.0f, 1.0f, 0.0f));
+	model = translate(model, -_objects[0].getCenterPoint());
 
 	_usePercentage = std::clamp(_usePercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
 	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
 
-	glUniformMatrix4fv(_modelUni, 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(_modelUni, 1, GL_FALSE, model.m);
 	glUniform1f(_usePercentageUni, _usePercentage);
 	glUniform1f(_useColorPercentageUni, _useColorPercentage);
 
@@ -195,18 +195,18 @@ void Scop::f3Display() {
 		sum += fps;
 	}
 	_characters.render("Speed : " + roundStringFloat(std::to_string(_camera.getTotalSpeed()), 2),
-			0.0f, _height - 20, .35f, glm::vec3(1, 1, 1));
-	_characters.render("FPS : " + std::to_string(sum / _averageFPS.size()), 0, _height - 40, .35f, glm::vec3(1, 1, 1));
-	_characters.render("Frame Count : " + std::to_string(_fpsFrameCount), 200, _height - 40, .35f, glm::vec3(1, 1, 1));
+			0.0f, _height - 20, .35f, Vec3(1, 1, 1));
+	_characters.render("FPS : " + std::to_string(sum / _averageFPS.size()), 0, _height - 40, .35f, Vec3(1, 1, 1));
+	_characters.render("Frame Count : " + std::to_string(_fpsFrameCount), 200, _height - 40, .35f, Vec3(1, 1, 1));
 	_characters.render("Pos : " +
 		roundStringFloat(std::to_string(_camera.getPos().x), 2) + "/" +
 		roundStringFloat(std::to_string(_camera.getPos().y), 2) + "/" +
 		roundStringFloat(std::to_string(_camera.getPos().z), 2),
-		0, _height - 60, .35f, glm::vec3(1, 1, 1));
+		0, _height - 60, .35f, Vec3(1, 1, 1));
 	_characters.render("Use percentage : " + roundStringFloat(std::to_string(_usePercentage), 2),
-		0, _height - 80, .35f, glm::vec3(1, 1, 1));
+		0, _height - 80, .35f, Vec3(1, 1, 1));
 	_characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
-		0, _height - 100, .35f, glm::vec3(1, 1, 1));
+		0, _height - 100, .35f, Vec3(1, 1, 1));
 	// _characters.render("Triangles : " + std::to_string(
 		// [](const faceGroupMap &group) {
 			// int sum = 0;
@@ -215,5 +215,5 @@ void Scop::f3Display() {
 			// }
 			// return sum;
 		// }(_objects[0].getIndicesGroup()) / 3),
-		// 0, _height - 120, .35f, glm::vec3(1, 1, 1));
+		// 0, _height - 120, .35f, Vec3(1, 1, 1));
 }

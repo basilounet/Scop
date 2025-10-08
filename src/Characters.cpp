@@ -4,8 +4,6 @@
 
 #include "Characters.hpp"
 
-#include "glm/gtc/type_ptr.hpp"
-
 
 /* ==================== CONSTRUCTORS ==================== */
 
@@ -73,8 +71,8 @@ void Characters::loadASCII() {
 		// now store character for later use
 		character character = {
 			texture,
-			glm::ivec2(_face->glyph->bitmap.width, _face->glyph->bitmap.rows),
-			glm::ivec2(_face->glyph->bitmap_left, _face->glyph->bitmap_top),
+			Vec2(_face->glyph->bitmap.width, _face->glyph->bitmap.rows),
+			Vec2(_face->glyph->bitmap_left, _face->glyph->bitmap_top),
 			static_cast<unsigned int>(_face->glyph->advance.x)
 		};
 		_characters[c] = character;
@@ -83,7 +81,7 @@ void Characters::loadASCII() {
 
 void Characters::initializeGL(const float width, const float height) {
 	_shader = Shader("./src/shaders/text.vert", "./src/shaders/text.frag");
-	_projection = glm::ortho(0.0f, width, 0.0f, height);
+	_projection = ortho(0.0f, width, 0.0f, height);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -96,7 +94,7 @@ void Characters::initializeGL(const float width, const float height) {
 	_vbo.unbind();
 	_vao.unbind();
 	_shader.activate();
-	glUniformMatrix4fv(glGetUniformLocation(_shader.getId(), "projection"), 1, GL_FALSE, glm::value_ptr(_projection));
+	glUniformMatrix4fv(glGetUniformLocation(_shader.getId(), "projection"), 1, GL_FALSE, _projection.m);
 }
 
 void Characters::deleteCharacters() {
@@ -106,7 +104,7 @@ void Characters::deleteCharacters() {
 	FT_Done_FreeType(_ft);
 }
 
-void Characters::render(const std::string& text, float x, float y, float scale, const glm::vec3& color) {
+void Characters::render(const std::string& text, float x, float y, float scale, const Vec3& color) {
 	// activate corresponding render state
 	_shader.activate();
 	glUniform3f(glGetUniformLocation(_shader.getId(), "textColor"), color.x, color.y, color.z);

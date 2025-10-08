@@ -4,6 +4,8 @@
 
 #include "Object.hpp"
 
+#include "math/Vec2.hpp"
+
 
 const mapFunc Object::_objFunctionParser = {
 			{"v", &Object::parseVertex},
@@ -84,7 +86,7 @@ const faceGroupMap &Object::getIndicesGroup() const {
 	return _indicesGroups;
 }
 
-const glm::vec3 & Object::getCenterPoint() const {
+const Vec3 & Object::getCenterPoint() const {
 	return _centerPoint;
 }
 
@@ -156,10 +158,10 @@ void Object::calculateNormals() {
 		indicesBuffer.insert(indicesBuffer.end(), group.second._indices.begin(), group.second._indices.end());
 	}
 	// for (auto & vertice : _vertices) {
-		// vertice.normal = glm::vec3(0, 0, 0);
+		// vertice.normal = Vec3(0, 0, 0);
 	// }
 	for (size_t i = 0; i < indicesBuffer.size() - 2; i += 3) {
-		glm::vec3 p = glm::cross(
+		Vec3 p = cross(
 			_vertices[indicesBuffer[i + 1]].position - _vertices[indicesBuffer[i]].position,
 			_vertices[indicesBuffer[i + 2]].position - _vertices[indicesBuffer[i]].position);
 		// std::cout << "Face" YELLOW" [" <<indicesBuffer[i]<<", "<<indicesBuffer[i + 1]<<", "<<indicesBuffer[i + 2]<<
@@ -171,9 +173,8 @@ void Object::calculateNormals() {
 	}
 	for (size_t i = 0; i < _vertices.size(); ++i) {
 		// if (_vertices[i].normal.x == 0 && _vertices[i].normal.y == 0 && _vertices[i].normal.z == 0)
-			// _vertices[i].normal = glm::vec3(0.0f, 0.0f, 1.0f);
-		_vertices[i].normal = glm::abs(glm::normalize(_vertices[i].normal));
-		// _vertices[i].normal = glm::normalize(_vertices[i].normal);
+			// _vertices[i].normal = Vec3(0.0f, 0.0f, 1.0f);
+		_vertices[i].normal = normalize(_vertices[i].normal).abs();
 		_vertices[i].color = _vertices[i].normal;
 		// std::cout << "Vertex " YELLOW"["<<i<<"]" RESET" normal: "
 			// << _vertices[i].normal.x << ", " << _vertices[i].normal.y << ", " << _vertices[i].normal.z << std::endl;
@@ -182,12 +183,12 @@ void Object::calculateNormals() {
 
 void Object::assignTexCoords() {
 	for (Vertex & v : _vertices) {
-		v.texCoord = glm::vec2(v.position.z, v.position.y);
+		v.texCoord = Vec2(v.position.z, v.position.y);
 	}
 }
 
 void Object::calculateCenter() {
-	glm::vec3 max = glm::vec3(
+	Vec3 max = Vec3(
 		std::max_element(_vertices.begin(), _vertices.end(),
 			[](const Vertex &a, const Vertex &b) {
 			return a.position.x < b.position.x;})->position.x,
@@ -197,7 +198,7 @@ void Object::calculateCenter() {
 		std::max_element(_vertices.begin(), _vertices.end(),
 			[](const Vertex &a, const Vertex &b) {
 			return a.position.z < b.position.z;	})->position.z);
-	glm::vec3 min = glm::vec3(
+	Vec3 min = Vec3(
 	std::min_element(_vertices.begin(), _vertices.end(),
 		[](const Vertex &a, const Vertex &b) {
 		return a.position.x < b.position.x;})->position.x,
@@ -271,7 +272,7 @@ void Object::checkNumber(const std::string &str, const int type, const int sign,
 
 
 void Object::parseVertex(const std::vector<std::string>& tokens, const size_t lineCount) {
-		glm::vec3 vec;
+		Vec3 vec;
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED"Invalid number of values for vertex at line" YELLOW " ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
@@ -283,8 +284,8 @@ void Object::parseVertex(const std::vector<std::string>& tokens, const size_t li
 	if (_vCount < _vertices.size())
 		_vertices[_vCount].position = vec;
 	else
-		_vertices.push_back(Vertex{glm::vec3(vec), glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.5f, 0.20f, 0.9f), glm::vec2(1000000, -1000000)});
+		_vertices.push_back(Vertex{Vec3(vec), Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.5f, 0.20f, 0.9f), Vec2(1000000, -1000000)});
 	++_vCount;
 }
 
@@ -295,12 +296,12 @@ void Object::parseTexCoord(const std::vector<std::string>& tokens, const size_t 
 	checkNumber(tokens[1], FLOAT, ANY, lineCount);
 	checkNumber(tokens[2], FLOAT, ANY, lineCount);
 	if (_vtCount < _vertices.size())
-		_vertices[_vtCount].texCoord = glm::vec2(std::stof(tokens[1]), std::stof(tokens[2]));
+		_vertices[_vtCount].texCoord = Vec2(std::stof(tokens[1]), std::stof(tokens[2]));
 	else
-		_vertices.push_back(Vertex{glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(1.0f, 0.0f, 0.0f),
-			glm::vec3(0.5f, 0.80f, 0.9f),
-			glm::vec2(std::stof(tokens[1]), std::stof(tokens[2]))});
+		_vertices.push_back(Vertex{Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(1.0f, 0.0f, 0.0f),
+			Vec3(0.5f, 0.80f, 0.9f),
+			Vec2(std::stof(tokens[1]), std::stof(tokens[2]))});
 	++_vtCount;
 }
 
@@ -312,12 +313,12 @@ void Object::parseNormal(const std::vector<std::string>& tokens, const size_t li
 	checkNumber(tokens[2], FLOAT, ANY, lineCount);
 	checkNumber(tokens[3], FLOAT, ANY, lineCount);
 	if (_vnCount < _vertices.size())
-		_vertices[_vnCount].normal = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+		_vertices[_vnCount].normal = Vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 	else
-		_vertices.push_back(Vertex{glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3])),
-			glm::vec3(0.5f, 0.80f, 0.9f),
-			glm::vec2(1000000, -1000000)});
+		_vertices.push_back(Vertex{Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3])),
+			Vec3(0.5f, 0.80f, 0.9f),
+			Vec2(1000000, -1000000)});
 	++_vnCount;
 }
 
@@ -418,7 +419,7 @@ void Object::parseKa(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial->_ka = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_ka = Vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKd(const std::vector<std::string> &tokens, size_t lineCount) {
@@ -429,7 +430,7 @@ void Object::parseKd(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial->_kd = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_kd = Vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKs(const std::vector<std::string> &tokens, size_t lineCount) {
@@ -440,7 +441,7 @@ void Object::parseKs(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial->_ks = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_ks = Vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseKe(const std::vector<std::string> &tokens, size_t lineCount) {
@@ -451,7 +452,7 @@ void Object::parseKe(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
-	_currentParsingMaterial->_ke = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
+	_currentParsingMaterial->_ke = Vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
 }
 
 void Object::parseNi(const std::vector<std::string> &tokens, size_t lineCount) {

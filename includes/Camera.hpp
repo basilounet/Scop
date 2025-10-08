@@ -7,22 +7,19 @@
 
 # include <glad/glad.h>
 # include <GLFW/glfw3.h>
-# include <glm/glm.hpp>
-# include <glm/gtc/matrix_transform.hpp>
-# include <glm/gtc/type_ptr.hpp>
-# include <glm/gtx/rotate_vector.hpp>
-# include <glm/gtx/vector_angle.hpp>
 
+# include "Colors.hpp"
 # include "Shader.hpp"
+# include "math/Mat4.hpp"
 
 # define SHIFT 0b1
 
 class Camera {
 private:
-	glm::vec3	_pos;
-	glm::vec3	_orientation;
-	glm::vec3	_up;
-	glm::mat4	_cameraMatrix;
+	Vec3	_pos;
+	Vec3	_orientation;
+	Vec3	_up;
+	Mat4	_cameraMatrix;
 
 	int				_width, _height;
 	float			_speed;
@@ -33,13 +30,13 @@ private:
 
 public:
 	Camera();
-	Camera(const int width, const int height, const glm::vec3& position);
+	Camera(const int width, const int height, const Vec3& position);
 	Camera(const Camera& other);
 	Camera& operator=(const Camera& other);
 	~Camera();
 
 
-	glm::vec3	getPos() const;
+	Vec3		getPos() const;
 	float		getSpeed() const;
 	float		getTotalSpeed() const;
 
