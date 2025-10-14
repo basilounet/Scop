@@ -19,13 +19,36 @@ SRC = 	$(GLAD_CPP) \
 		math/Vec4.cpp \
 		math/Mat4.cpp \
 
+SRC_B = $(GLAD_CPP) \
+		main.cpp \
+		Scop.cpp \
+		Shader.cpp \
+		VBO.cpp \
+		EBO.cpp \
+		VAO.cpp \
+		stb.cpp \
+		Texture.cpp \
+		Camera.cpp \
+		Mesh.cpp \
+		Object.cpp \
+		Characters.cpp \
+		utils.cpp \
+		math/Vec2.cpp \
+		math/Vec3.cpp \
+		math/Vec4.cpp \
+		math/Mat4.cpp \
+
 
 ##========== NAMES ==========##
 
 NAME = scop
+BONUS = scop_bonus
 SRCS_DIR = src/
 OBJS_DIR = obj/
+SRCS_B_DIR = src_bonus/
+OBJS_B_DIR = obj_bonus/
 INCLUDE_DIR = includes/
+INCLUDES_B_DIR = includes_bonus/
 LIBRARIES_DIR = libs/
 GLFW = $(LIBRARIES_DIR)glfw/
 FREE_TYPE = $(LIBRARIES_DIR)freetype-2.14.1/
@@ -34,6 +57,7 @@ GLAD_CPP = glad.cpp # if in a subdirectory, update this
 ##========== OBJECTS ==========##
 
 OBJS = $(addprefix $(OBJS_DIR),$(SRC:.cpp=.o))
+OBJS_B = $(addprefix $(OBJS_B_DIR),$(SRC_B:.cpp=.o))
 
 ##========== COLORS ==========##
 
@@ -62,7 +86,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++17
 LDFLAGS = $(LIBS)
-LIBS = -I$(INCLUDE_DIR) -I$(GLFW)include -I$(FREE_TYPE)include
+LIBS = -I$(INCLUDE_DIR) -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR)
 
 ##========== MODES ==========##
 
@@ -86,6 +110,7 @@ endif
 
 ##========== ANIMATIONS ==========##
 
+START_TIME := $(shell date +%s)
 NUM_SRC = $(words $(SRC))
 INDEX = 0
 NUMBER_OF_ANIMATION = 16
@@ -96,6 +121,8 @@ endif
 ##========== COMPILATION ==========##
 
 all: glfw glad freeType $(NAME)
+
+bonus: glfw glad_bonus freeType $(BONUS)
 
 glfw:
 	@if [ ! -d "$(GLFW)" ]; then \
@@ -111,12 +138,24 @@ glad:
 	@if ls $(SRCS_DIR)$(dir $(GLAD_CPP)) | grep -q "glad"; then \
   		echo "$(GREEN)glad Found, no need to pull$(BASE_COLOR)"; \
   	else \
-		cd libs/ && git clone https://github.com/Dav1dde/glad.git glad; \
-		python -m glad --out-path=glad/build --generator=c; cd ..; \
-		mv libs/glad/build/src/glad.c src/glad.cpp ; \
-		mkdir -p includes/glad/ && mv libs/glad/build/include/glad/glad.h includes/glad/ ; \
-		rm -rf libs/glad ; \
+		cd $(LIBRARIES_DIR) && git clone https://github.com/Dav1dde/glad.git glad_lib; \
+		python -m glad --out-path=glad_lib/build --generator=c; cd ..; \
+		mv $(LIBRARIES_DIR)/glad_lib/build/src/glad.c $(SRCS_DIR)glad.cpp ; \
+		mkdir -p $(LIBRARIES_DIR)/glad/ && mv $(LIBRARIES_DIR)/glad_lib/build/include/glad/glad.h $(LIBRARIES_DIR)glad/ ; \
+		rm -rf $(LIBRARIES_DIR)/glad_lib ; \
 	fi
+
+glad_bonus:
+	@if ls $(SRCS_B_DIR)$(dir $(GLAD_CPP)) | grep -q "glad"; then \
+  		echo "$(GREEN)glad Found, no need to pull$(BASE_COLOR)"; \
+  	else \
+		cd $(LIBRARIES_DIR) && git clone https://github.com/Dav1dde/glad.git glad_lib; \
+		python -m glad --out-path=glad_lib/build --generator=c; cd ..; \
+		mv $(LIBRARIES_DIR)/glad_lib/build/src/glad.c $(SRCS_B_DIR)glad.cpp ; \
+		mkdir -p $(LIBRARIES_DIR)glad/ && mv $(LIBRARIES_DIR)/glad_lib/build/include/glad/glad.h $(LIBRARIES_DIR)glad/ ; \
+		rm -rf $(LIBRARIES_DIR)/glad_lib ; \
+	fi
+
 
 freeType:
 	@if [ ! -d "$(FREE_TYPE)" ]; then \
@@ -126,26 +165,37 @@ freeType:
 		rm -rf $(LIBRARIES_DIR)freetype-2.14.1.tar.gz; \
 	else echo "$(GREEN)freetype-2.14.1 Found, no need to download$(BASE_COLOR)"; \
 	fi
-	@cd $(FREE_TYPE) && make setup ansi && make -j$(nproc) && cd ../..
+	@cd $(FREE_TYPE) && make setup ansi --silent && make -j$(nproc) --silent && cd ../..
 
 $(NAME) : $(OBJS)
 	@echo ""
 	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
+	@echo "$(MAGENTA)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
+	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
+
+$(BONUS) : $(OBJS_B)
+	@echo ""
+	@$(CXX) -o $(BONUS) $(CXXFLAGS) $(OBJS_B) $(LDFLAGS) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
+	@echo "$(MAGENTA)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
 	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
 
 clean:
 	@rm -rf $(OBJS_DIR)
+	@rm -rf $(OBJS_B_DIR)
 	@rm -rf $(GLFW)/build
 
 fclean: clean
 	@rm -rf $(NAME)
+	@rm -rf $(BONUS)
 	@rm -rf $(GLFW)build/src/libglfw3.a
 	@rm -rf $(SRCS_DIR)$(GLAD_CPP)
+	@rm -rf $(SRCS_B_DIR)$(GLAD_CPP)
 	@echo "$(CYAN)Files cleaned$(BASE_COLOR)"
 
 cleanall: fclean
 	@rm -rf $(FREE_TYPE)
 	@rm -rf $(GLFW)
+	@rm -rf $(LIBRARIES_DIR)glad
 
 re: fclean all
 
@@ -167,6 +217,20 @@ else
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
 endif
 
+$(OBJS_B_DIR)%.o : $(SRCS_B_DIR)%.cpp
+ifeq ($(IS_PRINT),1)
+	@sleep $(TIMER)
+	@clear
+	@echo "$(GREEN)-= Compiling cub3D =-$(BASE_COLOR)"
+	$(animations)
+	$(loading)
+	$(file_size_graph)
+	@mkdir -p $(dir $@)
+	$(CC) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
+else
+	@mkdir -p $(dir $@)
+	@$(CC) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
+endif
 
 define animations
 	$(animation_$(shell expr $(INDEX) / $(ANIMATION_RATE) % $(NUMBER_OF_ANIMATION)))
@@ -201,7 +265,10 @@ define loading_color
 endef
 
 define file_size_graph
-	@awk -v size=$(shell stat -c %s $<) 'BEGIN { printf "[ "; for (i=0; i<int(size/1000); i++) printf "#"; printf " ] (%d KB)\n", size/1000 }'
+	@awk -v size=$(shell stat -c %s $<) 'BEGIN { printf "[ "; for (i=0; i<int(size/1000); i++) printf "#"; printf " ] (%d KB)", size/1000 }'
+	@echo -n " : $(DARK_GREEN)$$(cat $< | wc -l) lines$(BASE_COLOR)"
+	@echo -n " : $(ORANGE)$(shell expr $(shell date +%s) - $(START_TIME))s$(BASE_COLOR)"
+	@echo " : $(MAGENTA)$(INDEX)$(BASE_COLOR) / $(MAGENTA)$(NUM_SRC)$(BASE_COLOR)"
 endef
 
 define animation_0
@@ -461,4 +528,4 @@ define animation_15
 endef
 
 
-.PHONY : all glfw glad freeType clean fclean cleanall re run
+.PHONY : all bonus glfw glad glad_bonus freeType clean fclean cleanall re run
