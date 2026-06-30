@@ -16,6 +16,7 @@
 # include "Mesh.hpp"
 # include "Colors.hpp"
 # include "Characters.hpp"
+# include "Skybox.hpp"
 # include "utils.hpp"
 # include "math/Mat4.hpp"
 # include "math/Vec4.hpp"
@@ -32,6 +33,7 @@ private:
 	Camera						_camera;
 	std::vector<Object>			_objects;
 	Mesh						_mesh;
+	Skybox						_skybox;
 	GLuint						_modelUni;
 	float						_rotation;
 	GLuint						_usePercentageUni;

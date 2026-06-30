@@ -5,7 +5,7 @@
 #ifndef SCOP_OBJECT_HPP
 # define SCOP_OBJECT_HPP
 
-#include <map>
+# include <map>
 # include <string>
 # include <vector>
 # include "glad/glad.h"
@@ -47,14 +47,13 @@ struct FaceGroup {
 
 using mapFunc = std::map<std::string, void (Object::*)(const std::vector<std::string>& tokens, size_t line)>;
 using matMap = std::map<std::string, MaterialData>;
-using faceGroupMap = std::map<std::string, FaceGroup>;
+using faceGroupMap = std::map<std::string, FaceGroup>; // name -> FaceGroup
 
 class Object {
 private:
-	static matMap						_materials; // TODO : make it non static
+	static matMap						_materials; // TODO : make it non static?
 	static std::string					_texturePath;
 
-	std::string							_rawData;
 	std::string							_objPath;
 	std::vector<Vertex>					_vertices;
 	faceGroupMap						_indicesGroups;
@@ -73,6 +72,8 @@ public:
 	Object& operator=(const Object& other);
 	~Object();
 
+	void								calculateNormals();
+
 	const std::vector<Vertex>&			getVertices()		const;
 	const faceGroupMap&					getIndicesGroup()	const;
 	const Vec3&							getCenterPoint()	const;
@@ -86,7 +87,6 @@ private:
 	void								parse(const std::string& filepath,
 												const mapFunc& func = _objFunctionParser,
 												size_t lineCount = 0);
-	void								calculateNormals();
 	void								assignTexCoords();
 	void								calculateCenter();
 	static std::vector<std::string>		split(const std::string& str, const std::string& delims, const bool keepEmpty = false);

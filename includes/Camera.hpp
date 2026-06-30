@@ -37,6 +37,8 @@ public:
 
 
 	Vec3		getPos() const;
+	Vec3		getOrientation() const;
+	Vec3		getUp() const;
 	float		getSpeed() const;
 	float		getTotalSpeed() const;
 

@@ -45,10 +45,12 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 	glfwSwapInterval(0); // Enable vsync
 
+	_skybox.createSkybox();
 	_rotation = 0.0f;
 	_averageFPS.resize(32, 60);
+	_fpsFrameCount = 0;
 	_useColorPercentage = 1.0f;
-	_flags = F3 | USE_COLORS;
+	_flags = F3 | USE_COLORS | USE_TEX;
 }
 
 Scop::Scop(const Scop& other) {
@@ -66,6 +68,7 @@ Scop& Scop::operator=(const Scop& other) {
 		_camera = other._camera;
 		_objects = other._objects;
 		_mesh = other._mesh;
+		_skybox = other._skybox;
 		_modelUni = other._modelUni;
 		_rotation = other._rotation;
 		_usePercentageUni = other._usePercentageUni;
@@ -84,6 +87,7 @@ Scop& Scop::operator=(const Scop& other) {
 Scop::~Scop() {
 	_characters.deleteCharacters();
 	_mesh.destroy();
+	_skybox.destroy();
 	_shaderProgram.deleteShader();
 	glfwDestroyWindow(_window);
 	glfwTerminate();
@@ -166,7 +170,7 @@ void Scop::draw() {
 	_camera.matrix(_shaderProgram, "camMatrix");
 
 	Mat4 model = Mat4(1.0f);
-	_rotation += _deltaTime * 5.0f;
+	_rotation += _deltaTime * 10.0f;
 	model = rotate(model, radians(_rotation), Vec3(0.0f, 1.0f, 0.0f));
 	model = translate(model, -_objects[0].getCenterPoint());
 
@@ -178,6 +182,7 @@ void Scop::draw() {
 	glUniform1f(_useColorPercentageUni, _useColorPercentage);
 
 	_mesh.draw(_shaderProgram, _camera);
+	_skybox.drawSkybox(_camera);
 }
 
 void Scop::inputs() {
@@ -186,9 +191,7 @@ void Scop::inputs() {
 void Scop::f3Display() {
 	if ((_flags & F3) == 0)
 		return;
-	// usleep(35000);
-	_averageFPS[_fpsFrameCount] = (unsigned short)(1.0f / _deltaTime);
-	_fpsFrameCount = ++_fpsFrameCount % _averageFPS.size();
+	_averageFPS[_fpsFrameCount++ % _averageFPS.size()] = (unsigned short)(1.0f / _deltaTime);
 	unsigned long sum = 0;
 	for (const short fps : _averageFPS) {
 		// std::cout << "Fps : "  << fps << std::endl;
@@ -208,12 +211,12 @@ void Scop::f3Display() {
 	_characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
 		0, _height - 100, .35f, Vec3(1, 1, 1));
 	// _characters.render("Triangles : " + std::to_string(
-		// [](const faceGroupMap &group) {
-			// int sum = 0;
-			// for (const auto& it : group) {
-				// sum += it.second._indices.size();
-			// }
-			// return sum;
-		// }(_objects[0].getIndicesGroup()) / 3),
-		// 0, _height - 120, .35f, Vec3(1, 1, 1));
+	// 	[](const faceGroupMap &group) {
+	// 		int sum = 0;
+	// 		for (const auto& it : group) {
+	// 			sum += it.second._indices.size();
+	// 		}
+	// 		return sum;
+	// 	}(_objects[0].getIndicesGroup()) / 3),
+	// 	0, _height - 120, .35f, Vec3(1, 1, 1));
 }

@@ -33,7 +33,6 @@ Texture::Texture(const std::string &path, const std::string& texType, const GLui
 
 Texture::Texture(const Texture &other) {
 	*this = other;
-
 }
 
 Texture & Texture::operator=(const Texture &other) {

@@ -4,6 +4,7 @@ SRC = 	$(GLAD_CPP) \
 		main.cpp \
 		Scop.cpp \
 		Shader.cpp \
+		Skybox.cpp \
 		VBO.cpp \
 		EBO.cpp \
 		VAO.cpp \
@@ -18,26 +19,6 @@ SRC = 	$(GLAD_CPP) \
 		math/Vec3.cpp \
 		math/Vec4.cpp \
 		math/Mat4.cpp \
-
-SRC_B = $(GLAD_CPP) \
-		main.cpp \
-		Scop.cpp \
-		Shader.cpp \
-		VBO.cpp \
-		EBO.cpp \
-		VAO.cpp \
-		stb.cpp \
-		Texture.cpp \
-		Camera.cpp \
-		Mesh.cpp \
-		Object.cpp \
-		Characters.cpp \
-		utils.cpp \
-		math/Vec2.cpp \
-		math/Vec3.cpp \
-		math/Vec4.cpp \
-		math/Mat4.cpp \
-
 
 ##========== NAMES ==========##
 
@@ -48,7 +29,6 @@ OBJS_DIR = obj/
 SRCS_B_DIR = src_bonus/
 OBJS_B_DIR = obj_bonus/
 INCLUDE_DIR = includes/
-INCLUDES_B_DIR = includes_bonus/
 LIBRARIES_DIR = libs/
 GLFW = $(LIBRARIES_DIR)glfw/
 FREE_TYPE = $(LIBRARIES_DIR)freetype-2.14.1/
@@ -86,7 +66,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++17
 LDFLAGS = $(LIBS)
-LIBS = -I$(INCLUDE_DIR) -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR)
+LIBS = -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR)
 
 ##========== MODES ==========##
 
@@ -121,8 +101,6 @@ endif
 ##========== COMPILATION ==========##
 
 all: glfw glad freeType $(NAME)
-
-bonus: glfw glad_bonus freeType $(BONUS)
 
 glfw:
 	@if [ ! -d "$(GLFW)" ]; then \
@@ -169,13 +147,7 @@ freeType:
 
 $(NAME) : $(OBJS)
 	@echo ""
-	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
-	@echo "$(MAGENTA)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
-	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
-
-$(BONUS) : $(OBJS_B)
-	@echo ""
-	@$(CXX) -o $(BONUS) $(CXXFLAGS) $(OBJS_B) $(LDFLAGS) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
+	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -I$(INCLUDE_DIR) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
 	@echo "$(MAGENTA)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
 	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
 
@@ -211,25 +183,10 @@ ifeq ($(IS_PRINT),1)
 	$(loading)
 	$(file_size_graph)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 else
 	@mkdir -p $(dir $@)
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
-endif
-
-$(OBJS_B_DIR)%.o : $(SRCS_B_DIR)%.cpp
-ifeq ($(IS_PRINT),1)
-	@sleep $(TIMER)
-	@clear
-	@echo "$(GREEN)-= Compiling cub3D =-$(BASE_COLOR)"
-	$(animations)
-	$(loading)
-	$(file_size_graph)
-	@mkdir -p $(dir $@)
-	$(CC) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
-else
-	@mkdir -p $(dir $@)
-	@$(CC) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 endif
 
 define animations
@@ -528,4 +485,4 @@ define animation_15
 endef
 
 
-.PHONY : all bonus glfw glad glad_bonus freeType clean fclean cleanall re run
+.PHONY : all glfw glad glad_bonus freeType clean fclean cleanall re run

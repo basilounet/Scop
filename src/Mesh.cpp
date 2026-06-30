@@ -3,6 +3,8 @@
 //
 
 #include "Mesh.hpp"
+
+
 /* ==================== CONSTRUCTORS ==================== */
 
 Mesh::Mesh() {
@@ -27,17 +29,15 @@ Mesh::Mesh(const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup
 
 }
 
-Mesh::Mesh(Object &object) {
+Mesh::Mesh(Object& object) {
 	*this = Mesh(object.getVertices(), object.getIndicesGroup()); // TODO : put references?
 }
 
-Mesh::Mesh(const Object &object) {
-	*this = Mesh(
-	((Object)object).getVertices(),
-	((Object)object).getIndicesGroup());
+Mesh::Mesh(const Object& object) {
+	*this = Mesh(object.getVertices(), object.getIndicesGroup());
 }
 
-Mesh::Mesh(const Mesh &other) {
+Mesh::Mesh(const Mesh& other) {
 	*this = other;
 }
 
@@ -65,14 +65,13 @@ void Mesh::draw(const Shader &shader, const Camera &camera) {
 	Texture *texture = nullptr;
 	size_t i = 0;
 	glUniform3f(glGetUniformLocation(shader.getId(), "camPos"), camera.getPos().x, camera.getPos().y, camera.getPos().z);
-	for (auto & it : _indicesGroup) {
-
-		texture = &it.second._material->_mapKdTexture;
+	for (auto&[fst, snd] : _indicesGroup) {
+		texture = &snd._material->_mapKdTexture;
 		texture->texUnit(shader, texture->getType() + std::to_string(i), i);
 		texture->bind();
-		glDrawElements(GL_TRIANGLES, it.second._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
+		glDrawElements(GL_TRIANGLES, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
 		// glDrawElements(GL_LINE, it.second._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
-		offset += it.second._indices.size();
+		offset += snd._indices.size();
 		++i;
 		texture->unbind();
 	}
@@ -92,7 +91,7 @@ void Mesh::destroy() {
 	_vbo.deleteVBO();
 	_ebo.deleteEBO();
 
-	for (auto& it : _indicesGroup)
-		it.second._material->_mapKdTexture.deleteTexture();
+	for (auto&[fst, snd] : _indicesGroup)
+		snd._material->_mapKdTexture.deleteTexture();
 }
 

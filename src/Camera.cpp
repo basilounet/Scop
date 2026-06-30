@@ -64,6 +64,14 @@ Vec3 Camera::getPos() const {
 	return _pos;
 }
 
+Vec3 Camera::getOrientation() const {
+	return _orientation;
+}
+
+Vec3 Camera::getUp() const {
+	return _up;
+}
+
 float Camera::getSpeed() const {
 	return _speed;
 }
@@ -87,9 +95,9 @@ void Camera::matrix(const Shader &shader, const char *uniform) {
 }
 
 void Camera::inputs(GLFWwindow *window, const double deltaTime) {
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && _speedModifier > 0.1f)
+	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS && _speedModifier > 0.1f)
 		_speedModifier -= 1.0f * ((_keysPressed & SHIFT) ? _multiplier : 1.0f) * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 		_speedModifier += 1.0f * ((_keysPressed & SHIFT) ? _multiplier : 1.0f) * deltaTime;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -101,9 +109,9 @@ void Camera::inputs(GLFWwindow *window, const double deltaTime) {
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		_pos += (_speed + _speedModifier) * normalize(cross(_orientation, _up)) * (float)deltaTime;
 
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
 		_pos += (_speed + _speedModifier) * -_up * (float)deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
 		_pos += (_speed + _speedModifier) * _up * (float)deltaTime;
 
 	double mouseX, mouseY;

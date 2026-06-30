@@ -49,7 +49,7 @@ Object::Object(const std::string &filepath) {
 	calculateNormals();
 	assignTexCoords();
 	calculateCenter();
-}
+}	
 
 Object::Object(const Object &other) {
 	*this = other;
@@ -57,7 +57,6 @@ Object::Object(const Object &other) {
 
 Object & Object::operator=(const Object &other) {
 	if (this != &other) {
-		_rawData = other._rawData;
 		_objPath = other._objPath;
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
@@ -111,25 +110,26 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 	if (!file.is_open())
 		throw std::runtime_error(RED "Failed to open file: " MAGENTA + filepath + YELLOW " at line ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
-	std::getline(file, _rawData, '\0');
+	std::string rawData;
+	std::getline(file, rawData, '\0');
 	file.close();
-	_rawData += '\n';
+	rawData += '\n';
 
 	std::cout << std::endl << YELLOW "Parsing file: " MAGENTA + filepath + RESET << std::endl;
 
-	std::vector<std::string>	lines = split(_rawData, "\n", true);
-	std::vector<std::string>	elements;
+	std::vector<std::string>	lines = split(rawData, "\n", true);
+	std::vector<std::string>	tokens;
 
 	for (size_t i = 0; i < lines.size(); ++i) {
-		elements = split(lines[i], " \t\r\n");
-		if (lines[i].empty() || elements.empty() || elements[0].empty() || elements[0][0] == '#')
+		tokens = split(lines[i], " \t\r\n", false);
+		if (lines[i].empty() || tokens.empty() || tokens[0].empty() || tokens[0][0] == '#')
 			continue ;
 		try {
 			// std::cout << "Line["<<i<<"]: " << lines[i] << "$" << std::endl;
-			if (func.find(elements[0]) != func.end())
-				(this->*(func.at(elements[0])))(elements, i + 1);
+			if (func.find(tokens[0]) != func.end())
+				(this->*(func.at(tokens[0])))(tokens, i + 1);
 			else
-				throw std::runtime_error(RED + elements[0] + YELLOW
+				throw std::runtime_error(RED + tokens[0] + YELLOW
 					" : not recognized at line ===> " LIGTH_BLUE + std::to_string(i + 1) + RESET);
 				// throw std::runtime_error(RED + elements[0] + YELLOW" : not recognized (" MAGENTA + filepath
 					// + YELLOW ") at line ===> " LIGTH_BLUE + std::to_string(i + 1) + RESET);
@@ -141,9 +141,9 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 }
 
 void Object::createTexture() {
-	for (auto& it : _materials) {
+	for (auto&[fst, snd] : _materials) {
 		try {
-			it.second._mapKdTexture = Texture(_texturePath + it.second._mapKd, "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE);
+			snd._mapKdTexture = Texture(_texturePath + snd._mapKd, "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE);
 		}
 		catch (std::exception& e) {
 			std::cerr << e.what() << std::endl;
@@ -383,7 +383,6 @@ void Object::parseUseMaterial(const std::vector<std::string> &tokens, size_t lin
 
 
 void Object::parseNewMaterial(const std::vector<std::string> &tokens, size_t lineCount) {
-	(void)tokens, (void)lineCount;
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED"Invalid number of values for newmtl at line" YELLOW " ===> "
 			LIGTH_BLUE + std::to_string(lineCount) + RESET);
