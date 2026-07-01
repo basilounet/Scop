@@ -46,10 +46,7 @@ Object::Object(const std::string &filepath) {
 	_indicesGroups["default"]._material = _currentMaterial;
 	_currentParsingMaterial = nullptr;
 	parse(filepath);
-	calculateNormals();
-	assignTexCoords();
-	calculateCenter();
-}	
+}
 
 Object::Object(const Object &other) {
 	*this = other;
@@ -60,7 +57,6 @@ Object & Object::operator=(const Object &other) {
 		_objPath = other._objPath;
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
-		_centerPoint = other._centerPoint;
 		_currentMaterial = other._currentMaterial;
 		_currentParsingMaterial = other._currentParsingMaterial;
 		_vCount = other._vCount;
@@ -85,10 +81,6 @@ const faceGroupMap &Object::getIndicesGroup() const {
 	return _indicesGroups;
 }
 
-const Vec3 & Object::getCenterPoint() const {
-	return _centerPoint;
-}
-
 void Object::setVertices(const std::vector<Vertex> &vertices) {
 	_vertices = vertices;
 }
@@ -108,14 +100,14 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 		_objPath = filepath;
 	file.open(filepath.c_str());
 	if (!file.is_open())
-		throw std::runtime_error(RED "Failed to open file: " MAGENTA + filepath + YELLOW " at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED "Failed to open file: " PRP + filepath + YLW " at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	std::string rawData;
 	std::getline(file, rawData, '\0');
 	file.close();
 	rawData += '\n';
 
-	std::cout << std::endl << YELLOW "Parsing file: " MAGENTA + filepath + RESET << std::endl;
+	std::cout << std::endl << YLW "Parsing file: " PRP + filepath + RESET << std::endl;
 
 	std::vector<std::string>	lines = split(rawData, "\n", true);
 	std::vector<std::string>	tokens;
@@ -129,10 +121,10 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 			if (func.find(tokens[0]) != func.end())
 				(this->*(func.at(tokens[0])))(tokens, i + 1);
 			else
-				throw std::runtime_error(RED + tokens[0] + YELLOW
-					" : not recognized at line ===> " LIGTH_BLUE + std::to_string(i + 1) + RESET);
-				// throw std::runtime_error(RED + elements[0] + YELLOW" : not recognized (" MAGENTA + filepath
-					// + YELLOW ") at line ===> " LIGTH_BLUE + std::to_string(i + 1) + RESET);
+				throw std::runtime_error(RED + tokens[0] + YLW
+					" : not recognized at line ===> " CYN + std::to_string(i + 1) + RESET);
+				// throw std::runtime_error(RED + elements[0] + YLW" : not recognized (" PRP + filepath
+					// + YLW ") at line ===> " CYN + std::to_string(i + 1) + RESET);
 		}
 		catch (const std::exception &e) {
 			std::cerr << e.what() << std::endl;
@@ -149,66 +141,6 @@ void Object::createTexture() {
 			std::cerr << e.what() << std::endl;
 		}
 	}
-}
-
-void Object::calculateNormals() {
-	std::vector<GLuint> indicesBuffer;
-
-	for (auto &group : _indicesGroups) {
-		indicesBuffer.insert(indicesBuffer.end(), group.second._indices.begin(), group.second._indices.end());
-	}
-	// for (auto & vertice : _vertices) {
-		// vertice.normal = Vec3(0, 0, 0);
-	// }
-	for (size_t i = 0; i < indicesBuffer.size() - 2; i += 3) {
-		Vec3 p = cross(
-			_vertices[indicesBuffer[i + 1]].position - _vertices[indicesBuffer[i]].position,
-			_vertices[indicesBuffer[i + 2]].position - _vertices[indicesBuffer[i]].position);
-		// std::cout << "Face" YELLOW" [" <<indicesBuffer[i]<<", "<<indicesBuffer[i + 1]<<", "<<indicesBuffer[i + 2]<<
-			// "]" RESET " product: " << p.x << ", " << p.y << ", " << p.z << std::endl;
-		_vertices[indicesBuffer[i]].normal += p;
-		_vertices[indicesBuffer[i + 1]].normal += p;
-		_vertices[indicesBuffer[i + 2]].normal += p;
-
-	}
-	for (size_t i = 0; i < _vertices.size(); ++i) {
-		// if (_vertices[i].normal.x == 0 && _vertices[i].normal.y == 0 && _vertices[i].normal.z == 0)
-			// _vertices[i].normal = Vec3(0.0f, 0.0f, 1.0f);
-		_vertices[i].normal = normalize(_vertices[i].normal).abs();
-		_vertices[i].color = _vertices[i].normal;
-		// std::cout << "Vertex " YELLOW"["<<i<<"]" RESET" normal: "
-			// << _vertices[i].normal.x << ", " << _vertices[i].normal.y << ", " << _vertices[i].normal.z << std::endl;
-	}
-}
-
-void Object::assignTexCoords() {
-	for (Vertex & v : _vertices) {
-		v.texCoord = Vec2(v.position.z, v.position.y);
-	}
-}
-
-void Object::calculateCenter() {
-	Vec3 max = Vec3(
-		std::max_element(_vertices.begin(), _vertices.end(),
-			[](const Vertex &a, const Vertex &b) {
-			return a.position.x < b.position.x;})->position.x,
-		std::max_element(_vertices.begin(), _vertices.end(),
-			[](const Vertex &a, const Vertex &b) {
-			return a.position.y < b.position.y; })->position.y,
-		std::max_element(_vertices.begin(), _vertices.end(),
-			[](const Vertex &a, const Vertex &b) {
-			return a.position.z < b.position.z;	})->position.z);
-	Vec3 min = Vec3(
-	std::min_element(_vertices.begin(), _vertices.end(),
-		[](const Vertex &a, const Vertex &b) {
-		return a.position.x < b.position.x;})->position.x,
-	std::min_element(_vertices.begin(), _vertices.end(),
-		[](const Vertex &a, const Vertex &b) {
-		return a.position.y < b.position.y; })->position.y,
-	std::min_element(_vertices.begin(), _vertices.end(),
-		[](const Vertex &a, const Vertex &b) {
-		return a.position.z < b.position.z;	})->position.z);
-	_centerPoint = (min + max) / 2.0f;
 }
 
 std::vector<std::string> Object::split(const std::string &str, const std::string& delims, const bool keepEmpty) {
@@ -244,27 +176,27 @@ bool isScientificNotationCorrect(const std::string &str, const char sign, size_t
 
 void Object::checkNumber(const std::string &str, const int type, const int sign, const size_t lineCount) {
 	if (str.find_first_not_of("+-0123456789.e") != std::string::npos || str == "+" || str == "-" || str == ".")
-		throw std::runtime_error(RED + str + YELLOW" : invalid char in number value at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED + str + YLW" : invalid char in number value at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if (str.find('e') != str.rfind('e'))
-		throw std::runtime_error(RED + str + YELLOW" : invalid scientific notation at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED + str + YLW" : invalid scientific notation at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if (type == INT && (str.find('.') != std::string::npos))
-		throw std::runtime_error(RED + str + YELLOW" : not an integer value at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED + str + YLW" : not an integer value at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if (type == FLOAT && (str.find('.') != str.rfind('.')))
-		throw std::runtime_error(RED + str + YELLOW" : invalid float value at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED + str + YLW" : invalid float value at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if (sign == POSITIVE && isScientificNotationCorrect(str, '-'))
-		throw std::runtime_error(RED + str + YELLOW" : not a positive value at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED + str + YLW" : not a positive value at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if (sign == NEGATIVE && str.find('-') != 0)
-		throw std::runtime_error(RED + str + YELLOW" : not a negative value at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED + str + YLW" : not a negative value at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if ((str.find('+', 1) != std::string::npos && !isScientificNotationCorrect(str, '+', 1)) ||
 		(str.find('-', 1) != std::string::npos && !isScientificNotationCorrect(str, '-', 1)))
-			throw std::runtime_error(RED + str + YELLOW" : invalid sign position at line ===> "
-				LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			throw std::runtime_error(RED + str + YLW" : invalid sign position at line ===> "
+				CYN + std::to_string(lineCount) + RESET);
 }
 
 
@@ -274,8 +206,8 @@ void Object::checkNumber(const std::string &str, const int type, const int sign,
 void Object::parseVertex(const std::vector<std::string>& tokens, const size_t lineCount) {
 		Vec3 vec;
 	if (tokens.size() != 4)
-		throw std::runtime_error(RED"Invalid number of values for vertex at line" YELLOW " ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED"Invalid number of values for vertex at line" YLW " ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
 		checkNumber(tokens[i], FLOAT, ANY, lineCount);
 		vec[i - 1] = std::stof(tokens[i]);
@@ -291,8 +223,8 @@ void Object::parseVertex(const std::vector<std::string>& tokens, const size_t li
 
 void Object::parseTexCoord(const std::vector<std::string>& tokens, const size_t lineCount) {
 	if (tokens.size() < 3 || tokens.size() > 4)
-		throw std::runtime_error(RED"Invalid number of values for vt at line" YELLOW " ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED"Invalid number of values for vt at line" YLW " ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, ANY, lineCount);
 	checkNumber(tokens[2], FLOAT, ANY, lineCount);
 	if (_vtCount < _vertices.size())
@@ -307,8 +239,8 @@ void Object::parseTexCoord(const std::vector<std::string>& tokens, const size_t 
 
 void Object::parseNormal(const std::vector<std::string>& tokens, const size_t lineCount) {
 	if (tokens.size() != 4)
-		throw std::runtime_error(RED "Invalid number of values for vn at line" YELLOW " ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED "Invalid number of values for vn at line" YLW " ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, ANY, lineCount);
 	checkNumber(tokens[2], FLOAT, ANY, lineCount);
 	checkNumber(tokens[3], FLOAT, ANY, lineCount);
@@ -327,13 +259,13 @@ void Object::parseFace(const std::vector<std::string>& tokens, const size_t line
 	int	numbers[tokens.size() - 1];
 
 	if (tokens.size() < 4)
-		throw std::runtime_error(RED"Invalid number of values for face at line" YELLOW " ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED"Invalid number of values for face at line" YLW " ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
 		parts = split(tokens[i], "/", true); // TODO : handle v/vt/vn v//vn v/vt
 		if (parts[0].empty())
-			throw std::runtime_error(RED "Missing vertex index at line" YELLOW " ===> "
-				LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			throw std::runtime_error(RED "Missing vertex index at line" YLW " ===> "
+				CYN + std::to_string(lineCount) + RESET);
 		checkNumber(parts[0], INT, POSITIVE, lineCount);
 		numbers[i - 1] = std::stoi(parts[0]);
 	}
@@ -354,8 +286,8 @@ void Object::parseMaterialLib(const std::vector<std::string>& tokens, const size
 	std::ifstream file;
 
 	if (tokens.size() < 2)
-		throw std::runtime_error(RED"Invalid number of values for mtllib at line" YELLOW " ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED"Invalid number of values for mtllib at line" YLW " ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
 		try {
 			std::filesystem::path fileDir = std::filesystem::path(_objPath).parent_path();
@@ -366,14 +298,14 @@ void Object::parseMaterialLib(const std::vector<std::string>& tokens, const size
 			std::cerr << e.what() << std::endl;
 		}
 	}
-	std::cout << std::endl << YELLOW "Parsing file: " MAGENTA + _objPath + RESET << std::endl;
+	std::cout << std::endl << YLW "Parsing file: " PRP + _objPath + RESET << std::endl;
 }
 
 void Object::parseUseMaterial(const std::vector<std::string> &tokens, size_t lineCount) {
 	if (tokens.size() < 2)
 		throw std::runtime_error(RED "No material name specified at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
-	// std::cout << YELLOW "Using material: " MAGENTA + tokens[1] + RESET << std::endl;
+			CYN + std::to_string(lineCount) + RESET);
+	// std::cout << YLW "Using material: " PRP + tokens[1] + RESET << std::endl;
 	_currentMaterial = getMaterial(tokens[1]);
 	_indicesGroups[_currentMaterial->_name]._material = _currentMaterial;
 }
@@ -384,11 +316,11 @@ void Object::parseUseMaterial(const std::vector<std::string> &tokens, size_t lin
 
 void Object::parseNewMaterial(const std::vector<std::string> &tokens, size_t lineCount) {
 	if (tokens.size() != 2)
-		throw std::runtime_error(RED"Invalid number of values for newmtl at line" YELLOW " ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED"Invalid number of values for newmtl at line" YLW " ===> "
+			CYN + std::to_string(lineCount) + RESET);
 	if (_materials.find(tokens[1]) != _materials.end())
-		throw std::runtime_error(RED "WARNING : Material " LIGTH_BLUE + tokens[1] +
-			YELLOW" already exists. Ignoring this at line ===> " LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED "WARNING : Material " CYN + tokens[1] +
+			YLW" already exists. Ignoring this at line ===> " CYN + std::to_string(lineCount) + RESET);
 	// std::cout << RED "New MaterialData" RESET << std::endl;
 	_materials[tokens[1]] = MaterialData();
 	_materials[tokens[1]]._name = tokens[1];
@@ -397,15 +329,15 @@ void Object::parseNewMaterial(const std::vector<std::string> &tokens, size_t lin
 
 void Object::checkCurrentParsingMaterial(size_t lineCount) {
 	if (!_currentParsingMaterial)
-		throw std::runtime_error(RED "No material currently being parsed" YELLOW " at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+		throw std::runtime_error(RED "No material currently being parsed" YLW " at line ===> "
+			CYN + std::to_string(lineCount) + RESET);
 }
 
 void Object::parseNs(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for Ns at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	_currentParsingMaterial->_ns = std::stof(tokens[1]);
 }
@@ -414,7 +346,7 @@ void Object::parseKa(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Ka at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
@@ -425,7 +357,7 @@ void Object::parseKd(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Kd at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
@@ -436,7 +368,7 @@ void Object::parseKs(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Ks at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
@@ -447,7 +379,7 @@ void Object::parseKe(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 4)
 		throw std::runtime_error(RED "Invalid number of values specified for Ke at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[2], FLOAT, POSITIVE, lineCount);
 	checkNumber(tokens[3], FLOAT, POSITIVE, lineCount);
@@ -458,7 +390,7 @@ void Object::parseNi(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for Ni at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	_currentParsingMaterial->_ni = std::stof(tokens[1]);
 }
@@ -467,7 +399,7 @@ void Object::parseD(const std::vector<std::string> &tokens, size_t lineCount) {
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for d at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	checkNumber(tokens[1], FLOAT, POSITIVE, lineCount);
 	_currentParsingMaterial->_d = std::stof(tokens[1]);
 }
@@ -476,7 +408,7 @@ void Object::parseMapKd(const std::vector<std::string> &tokens, size_t lineCount
 	checkCurrentParsingMaterial(lineCount);
 	if (tokens.size() != 2)
 		throw std::runtime_error(RED "Invalid number of values specified for map_Kd at line ===> "
-			LIGTH_BLUE + std::to_string(lineCount) + RESET);
+			CYN + std::to_string(lineCount) + RESET);
 	_currentParsingMaterial->_mapKd = tokens[1];
 }
 

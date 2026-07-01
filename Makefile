@@ -53,7 +53,7 @@ ORANGE 		=		\033[0;93m
 DARK_YELLOW	=		\033[33m
 BLUE 		=		\033[0;94m
 DARK_BLUE	=		\033[34m
-MAGENTA		=		\033[0;95m
+PRP		=		\033[0;95m
 DARK_MAGENTA=		\033[35m
 CYAN 		=		\033[0;96m
 WHITE		=		\033[0;97m
@@ -64,7 +64,7 @@ CXX = c++
 
 ##========== FLAGS ==========##
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++17
+CXXFLAGS = -Wall -Wextra -Werror -MP -MMD -std=c++17
 LDFLAGS = $(LIBS)
 LIBS = -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR)
 
@@ -147,8 +147,8 @@ freeType:
 
 $(NAME) : $(OBJS)
 	@echo ""
-	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -I$(INCLUDE_DIR) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a
-	@echo "$(MAGENTA)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
+	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -I$(INCLUDE_DIR) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a -flto
+	@echo "$(PRP)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
 	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
 
 clean:
@@ -225,7 +225,7 @@ define file_size_graph
 	@awk -v size=$(shell stat -c %s $<) 'BEGIN { printf "[ "; for (i=0; i<int(size/1000); i++) printf "#"; printf " ] (%d KB)", size/1000 }'
 	@echo -n " : $(DARK_GREEN)$$(cat $< | wc -l) lines$(BASE_COLOR)"
 	@echo -n " : $(ORANGE)$(shell expr $(shell date +%s) - $(START_TIME))s$(BASE_COLOR)"
-	@echo " : $(MAGENTA)$(INDEX)$(BASE_COLOR) / $(MAGENTA)$(NUM_SRC)$(BASE_COLOR)"
+	@echo " : $(PRP)$(INDEX)$(BASE_COLOR) / $(PRP)$(NUM_SRC)$(BASE_COLOR)"
 endef
 
 define animation_0

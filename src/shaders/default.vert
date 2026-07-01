@@ -12,10 +12,11 @@ out vec2 texCoord;
 
 uniform mat4 camMatrix;
 uniform mat4 model;
+uniform vec3 modelOffset;
 
 void main()
 {
-   currentPos = vec3(model * vec4(aPos, 1.0f));
+   currentPos = vec3(model * vec4(aPos, 1.0f)) + modelOffset;
 //   currentPos = aPos;
    normal = aNormal;
    color = aColor;

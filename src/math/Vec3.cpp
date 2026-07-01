@@ -8,16 +8,16 @@
 /* ==================== CONSTRUCTORS ==================== */
 
 
-Vec3::Vec3() : x(0.0f), y(0.0f), z(0.0f) {
+Vec3::Vec3() : x(0.f), y(0.f), z(0.f) {
 }
 
-Vec3::Vec3(float xyz) : x(xyz), y(xyz), z(xyz) {
+Vec3::Vec3(const float xyz) : x(xyz), y(xyz), z(xyz) {
 }
 
-Vec3::Vec3(float x, float y, float z) : x(x), y(y), z(z) {
+Vec3::Vec3(const float x, const float y, const float z) : x(x), y(y), z(z) {
 }
 
-Vec3::Vec3(const Vec3 &other) {
+Vec3::Vec3(const Vec3 &other) : x(0.f), y(0.f), z(0.f) {
 	*this = other;
 }
 
@@ -50,6 +50,13 @@ Vec3 Vec3::operator+=(const Vec3 &other) {
 
 Vec3 Vec3::operator-(const Vec3 &other) const {
 	return {x - other.x, y - other.y, z - other.z};
+}
+
+Vec3 Vec3::operator-=(const Vec3 &other) {
+	x -= other.x;
+	y -= other.y;
+	z -= other.z;
+	return *this;
 }
 
 Vec3 Vec3::operator-() const {
@@ -143,4 +150,9 @@ Vec3 normalize(const Vec3 &v) {
 	if (len > 0.0f)
 		return v / len;
 	return {0};
+}
+
+std::ostream & operator<<(std::ostream &os, const Vec3 &v) {
+	os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
+	return os;
 }

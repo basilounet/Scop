@@ -14,7 +14,7 @@ Texture::Texture(const std::string &path, const std::string& texType, const GLui
 	_type = texType;
 	_imgData = stbi_load(path.c_str(), &_imgWidth, &_imgHeight, &_numColCh, 0);
 	if (!_imgData)
-		throw std::runtime_error(RED "Failed to load texture: " MAGENTA + path + RESET);
+		throw std::runtime_error(RED "Failed to load texture: " PRP + path + RESET);
 
 	glGenTextures(1, &_textureID);
 	glActiveTexture(GL_TEXTURE0 + slot);

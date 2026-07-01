@@ -130,7 +130,7 @@ Mat4 lookAt(const Vec3 &eye, const Vec3 &center, const Vec3 &up) {
 	const Vec3 u = cross(s, f);
 	// std::cout << RED"my f: " << f.x << ", " << f.y << ", " << f.z << RESET << std::endl;
 	// std::cout << GREEN"my s: " << s.x << ", " << s.y << ", " << s.z << RESET << std::endl;
-	// std::cout << MAGENTA"my u: " << u.x << ", " << u.y << ", " << u.z << RESET << std::endl;
+	// std::cout << PRP"my u: " << u.x << ", " << u.y << ", " << u.z << RESET << std::endl;
 
 	Mat4 mat = Mat4::identity();
 

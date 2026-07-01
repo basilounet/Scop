@@ -32,19 +32,20 @@ private:
 	Shader						_shaderProgram;
 	Camera						_camera;
 	std::vector<Object>			_objects;
-	Mesh						_mesh;
+	std::vector<Mesh>			_mesh;
 	Skybox						_skybox;
-	GLuint						_modelUni;
+	GLint						_modelUni;
 	float						_rotation;
-	GLuint						_usePercentageUni;
+	GLint						_usePercentageUni;
 	float						_usePercentage;
-	GLuint						_useColorPercentageUni;
+	GLint						_useColorPercentageUni;
 	float						_useColorPercentage;
+	GLint						_modelOffsetUni;
 	Characters					_characters;
 	unsigned int				_flags;
 	unsigned int				_keysPressed;
 	std::vector<unsigned short> _averageFPS;
-	unsigned short				_fpsFrameCount;
+	unsigned short				frameCount;
 
 public:
 	Scop(int ac, char **av);
