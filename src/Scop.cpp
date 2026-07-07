@@ -39,22 +39,33 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 		_mesh[i].setPosOffset(Vec3(i * 5, i * 5, i * 5));
 	}
 	// _mesh = Mesh(_objects[0]);
-	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 2.0f));
-	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	_skybox.createSkybox();
+	_rotation = 0.0f;
+	_averageFPS.resize(50, 60);
+	_useColorPercentage = 1.0f;
+	_usePercentage = 1.0f;
+	_flags = F3 | USE_COLORS | USE_TEX | LOCK_MOUSE;
+
+	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 2.0f), &_flags);
+	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL + ((_flags & LOCK_MOUSE) == 0));
 	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
 	glfwSetFramebufferSizeCallback(_window, framebufferResize);
 
 	glfwSetWindowUserPointer(_window, this);
 	glfwSetKeyCallback(_window, keyCallback);
 
-	glfwSwapInterval(0); // Enable vsync
+	glfwSwapInterval(0); // 1 : Enable vsync
 
-	_skybox.createSkybox();
-	_rotation = 0.0f;
-	_averageFPS.resize(32, 60);
-	frameCount = 0;
-	_useColorPercentage = 1.0f;
-	_flags = F3 | USE_COLORS | USE_TEX;
+	/* ========== ImGui ========== */
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL(_window, true);
+	ImGui_ImplOpenGL3_Init();
 }
 
 Scop::Scop(const Scop& other) {
@@ -84,7 +95,7 @@ Scop& Scop::operator=(const Scop& other) {
 		_flags = other._flags;
 		_keysPressed = other._keysPressed;
 		_averageFPS = other._averageFPS;
-		frameCount = other.frameCount;
+		_currentEditMeshID = other._currentEditMeshID;
 	}
 	return *this;
 }
@@ -122,7 +133,8 @@ void Scop::gameLoop() {
 
 	while (!glfwWindowShouldClose(_window)) {
 		draw();
-		f3Display();
+		imGuiDisplay();
+		// f3Display();
 
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
@@ -137,6 +149,7 @@ void Scop::framebufferResize(GLFWwindow *window, int w, int h) {
 		return ;
 	scop->_width = w;
 	scop->_height = h;
+	scop->_camera.setWindowSize(w, h);
 }
 
 void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -183,60 +196,176 @@ void Scop::draw() {
 
 	static float oscil = 0.0f;
 	oscil += _deltaTime * 3.f;
-	_rotation += _deltaTime * 500.0f;
+	_rotation += _deltaTime * 10.0f;
 
 	for (size_t i = 0; i < _objects.size(); ++i) {
 		Mat4 model = Mat4(1.0f);
-		model = rotate(model, radians(_rotation), Vec3(cos(oscil), sin(oscil), cos(oscil)));
+		// model = rotate(model, radians(_rotation), Vec3(cos(oscil), sin(oscil), cos(oscil)));
+		model = rotate(model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
 		model = translate(model, -_mesh[i].getCenterPoint());
-		// std::cout << "centerPoint[" << i << "] = " << _mesh[i].getCenterPoint() << std::endl;
-		// model = translate(model, Vec3(0.0f, cos(oscil), 0.0f));
-		_mesh[i].addPosOffset(cos(oscil));
 
+		// _mesh[i].addPosOffset(cos(oscil));
 		glUniformMatrix4fv(_modelUni, 1, GL_FALSE, model.m);
 		glUniform3f(_modelOffsetUni, _mesh[i].getposOffset().x, _mesh[i].getposOffset().y, _mesh[i].getposOffset().z);
 
 		_mesh[i].draw(_shaderProgram, _camera);
-		_mesh[i].addPosOffset(-cos(oscil));
+		// _mesh[i].addPosOffset(-cos(oscil));
 	}
 	_skybox.drawSkybox(_camera);
 }
 
 void Scop::inputs() {
-	if (glfwGetKey(_window, GLFW_KEY_I) == GLFW_PRESS)
-		_mesh[0].addPosOffset({0.f, (float)_deltaTime, 0.f});
+	if (glfwGetKey(_window, GLFW_KEY_KP_7) == GLFW_PRESS)
+		_mesh[_currentEditMeshID].addPosOffset({0.f, -(float)_deltaTime, 0.f});
+	if (glfwGetKey(_window, GLFW_KEY_KP_9) == GLFW_PRESS)
+		_mesh[_currentEditMeshID].addPosOffset({0.f,  (float)_deltaTime, 0.f});
+	if (glfwGetKey(_window, GLFW_KEY_KP_6) == GLFW_PRESS)
+		_mesh[0].addPosOffset({ (float)_deltaTime, 0.f, 0.f});
+	if (glfwGetKey(_window, GLFW_KEY_KP_4) == GLFW_PRESS)
+		_mesh[0].addPosOffset({-(float)_deltaTime, 0.f, 0.f});
+	if (glfwGetKey(_window, GLFW_KEY_KP_8) == GLFW_PRESS)
+		_mesh[0].addPosOffset({0.f, 0.f, -(float)_deltaTime});
+	if (glfwGetKey(_window, GLFW_KEY_KP_5) == GLFW_PRESS)
+		_mesh[0].addPosOffset({0.f, 0.f,  (float)_deltaTime});
 }
 
 void Scop::f3Display() {
-	static unsigned int	nbObjects = 0;
-	static unsigned int triangleCount = 0;
+	// if ((_flags & F3) == 0)
+	// 	return;
+	// unsigned long sum = 0;
+	// for (const float fps : _averageFPS)
+	// 	sum += fps;
+	// _characters.render("Speed : " + roundStringFloat(std::to_string(_camera.getTotalSpeed()), 2),
+	// 		0.0f, _height - 20, .35f, Vec3(1, 1, 1));
+	// _characters.render("FPS : " + std::to_string(sum / _averageFPS.size()), 0, _height - 40, .35f, Vec3(1, 1, 1));
+	// _characters.render("Pos : " +
+	// 	roundStringFloat(std::to_string(_camera.getPos().x), 2) + "/" +
+	// 	roundStringFloat(std::to_string(_camera.getPos().y), 2) + "/" +
+	// 	roundStringFloat(std::to_string(_camera.getPos().z), 2),
+	// 	0, _height - 60, .35f, Vec3(1, 1, 1));
+	// _characters.render("Use percentage : " + roundStringFloat(std::to_string(_usePercentage), 2),
+	// 	0, _height - 80, .35f, Vec3(1, 1, 1));
+	// _characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
+	// 	0, _height - 100, .35f, Vec3(1, 1, 1));
+	// if (nbObjects != _objects.size() || triangleCount == 0) {
+	// 	triangleCount = 0;
+	// 	for (const auto& object : _objects)
+	// 		for (const auto& it : object.getIndicesGroup())
+	// 			triangleCount += it.second._indices.size() / 3;
+	// 	nbObjects = _objects.size();
+	// }
+	// _characters.render("Triangles : " + std::to_string(triangleCount),
+	// 	0, _height - 120, .35f, Vec3(1, 1, 1));
+}
 
-	if ((_flags & F3) == 0)
-		return;
-	_averageFPS[frameCount++ % _averageFPS.size()] = (unsigned short)(1.0f / _deltaTime);
-	unsigned long sum = 0;
-	for (const short fps : _averageFPS)
-		sum += fps;
-	_characters.render("Speed : " + roundStringFloat(std::to_string(_camera.getTotalSpeed()), 2),
-			0.0f, _height - 20, .35f, Vec3(1, 1, 1));
-	_characters.render("FPS : " + std::to_string(sum / _averageFPS.size()), 0, _height - 40, .35f, Vec3(1, 1, 1));
-	_characters.render("Frame Count : " + std::to_string(frameCount), 200, _height - 40, .35f, Vec3(1, 1, 1));
-	_characters.render("Pos : " +
-		roundStringFloat(std::to_string(_camera.getPos().x), 2) + "/" +
-		roundStringFloat(std::to_string(_camera.getPos().y), 2) + "/" +
-		roundStringFloat(std::to_string(_camera.getPos().z), 2),
-		0, _height - 60, .35f, Vec3(1, 1, 1));
-	_characters.render("Use percentage : " + roundStringFloat(std::to_string(_usePercentage), 2),
-		0, _height - 80, .35f, Vec3(1, 1, 1));
-	_characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
-		0, _height - 100, .35f, Vec3(1, 1, 1));
-	if (nbObjects != _objects.size() || triangleCount == 0) {
-		triangleCount = 0;
-		for (const auto& object : _objects)
-			for (const auto& it : object.getIndicesGroup())
-				triangleCount += it.second._indices.size() / 3;
-		nbObjects = _objects.size();
+void Scop::imGuiDisplay() {
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	debugDisplay();
+
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Scop::debugDisplay() {
+	if (ImGui::Begin("Debug", (bool *)__null)) {
+		static double sum = 50 * 60;
+		sum -= _averageFPS[0];
+		for (int i = 0; i < 49; ++i) {
+			_averageFPS[i] = _averageFPS[i + 1];
+		}
+		_averageFPS[49] = 1.0f / (float)_deltaTime;
+		sum += _averageFPS[49];
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.9f);
+		ImGui::PlotLines("Fps", _averageFPS.data(), _averageFPS.size(), 0, std::to_string(sum / _averageFPS.size()).c_str(), 0.f);
+
+		_camera.imGuiDisplay();
+		static unsigned int	nbObjects = 0;
+		static unsigned int totalTriangleCount = 0;
+		static unsigned int totalVerticesCount = 0;
+		static unsigned int totalTexturesCount = 0;
+		if (nbObjects != _objects.size()) {
+			totalTriangleCount = 0;
+			totalVerticesCount = 0;
+			totalTexturesCount = Object::getTotalTextureCount();
+			for (const auto& object : _objects) {
+				totalVerticesCount += object.getVertices().size();
+				for (const auto& it : object.getIndicesGroup())
+					totalTriangleCount += it.second._indices.size() / 3;
+			}
+			nbObjects = _objects.size();
+		}
+
+
+		static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
+			ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerH |
+			ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
+			ImGuiTableFlags_HighlightHoveredColumn | ImGuiTableFlags_RowBg;
+		static ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_AngledHeader |
+			ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort;
+		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoHostExtendX;
+		if (ImGui::BeginTable("Meshes infos", 4, flags)) {
+			ImGui::TableSetupColumn("Total Meshes", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Total Vertices", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Total Triangle", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Total Textures", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableHeadersRow();
+			ImGui::TableNextRow();
+			for (int column = 0;  column < 4; column++) {
+				ImGui::TableSetColumnIndex(column);
+				ImGui::PushItemWidth(-FLT_MIN);
+				ImGui::Text(std::to_string([&]()->size_t{switch (column) {
+						case 0: return _objects.size();
+						case 1: return totalVerticesCount;
+						case 2: return totalTriangleCount;
+						case 3: return totalTexturesCount;
+						default: return 0;
+					}}()).c_str(),
+					0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
+			}
+			ImGui::EndTable();
+		}
+
+		const char* column_names[] = { "ID", "Vertices", "Triangles", "Textures" };
+		const int columns_count = IM_COUNTOF(column_names);
+
+		if (ImGui::BeginTable("table_angled_headers", columns_count, table_flags, ImVec2(0.0f, 200))) {
+			ImGui::TableSetupColumn(column_names[0], ImGuiTableColumnFlags_NoHide, 0.f, 0);
+			for (int n = 1; n < columns_count; n++)
+				ImGui::TableSetupColumn(column_names[n], column_flags, 0.f, n);
+
+			ImGui::TableSetupScrollFreeze(1, 1);
+			ImGui::TableAngledHeadersRow(); // Draw angled headers for all columns with the ImGuiTableColumnFlags_AngledHeader flag.
+			ImGui::TableHeadersRow();       // Draw remaining headers and allow access to context-menu and other functions.
+			for (int row = 0; row < (int)_objects.size(); row++) {
+				ImGui::PushID(row);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("%d", row);
+				for (int column = 1; column < columns_count; column++)
+					if (ImGui::TableSetColumnIndex(column)) {
+						switch (column) {
+							case 1:
+								ImGui::Text("%zu", _objects[row].getVertices().size());
+								break;
+							case 2:
+								ImGui::Text("%zu", _objects[row].getTotalIndicesCount() / 3);
+								break;
+							case 3:
+								ImGui::Text("%zu", _objects[row].getIndicesGroup().size());
+								break;
+							default:
+								break;
+						}
+					}
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
+		}
 	}
-	_characters.render("Triangles : " + std::to_string(triangleCount),
-		0, _height - 120, .35f, Vec3(1, 1, 1));
+	ImGui::End();
 }

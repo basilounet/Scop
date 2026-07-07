@@ -50,20 +50,6 @@ using matMap = std::map<std::string, MaterialData>;
 using faceGroupMap = std::map<std::string, FaceGroup>; // name -> FaceGroup
 
 class Object {
-private:
-	static matMap						_materials; // TODO : make it non static?
-	static std::string					_texturePath;
-
-	std::string							_objPath;
-	std::vector<Vertex>					_vertices;
-	faceGroupMap						_indicesGroups;
-
-	MaterialData*						_currentMaterial;
-	MaterialData*						_currentParsingMaterial;
-	size_t								_vCount;
-	size_t								_vtCount;
-	size_t								_vnCount;
-
 public:
 	Object();
 	Object(const std::string &filepath);
@@ -72,8 +58,11 @@ public:
 	~Object();
 
 
-	const std::vector<Vertex>&			getVertices()		const;
-	const faceGroupMap&					getIndicesGroup()	const;
+	const std::vector<Vertex>&			getVertices()			const;
+	const faceGroupMap&					getIndicesGroup()		const;
+	const size_t&						getTotalIndicesCount()	const;
+
+	static size_t						getTotalTextureCount();
 
 	void								setVertices(const std::vector<Vertex>& vertices);
 	void								setIndicesGroup(const faceGroupMap &indices);
@@ -109,6 +98,21 @@ private:
 
 	static const mapFunc				_objFunctionParser;
 	static const mapFunc				_matFunctionParser;
+
+private:
+	static matMap		_materials; // TODO : make it non static?
+	static std::string	_texturePath;
+
+	std::string			_objPath;
+	std::vector<Vertex>	_vertices;
+	faceGroupMap		_indicesGroups;
+	size_t				_totalIndicesCount;
+
+	MaterialData*		_currentMaterial;
+	MaterialData*		_currentParsingMaterial;
+	size_t				_vCount;
+	size_t				_vtCount;
+	size_t				_vnCount;
 
 };
 

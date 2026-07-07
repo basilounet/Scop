@@ -1,6 +1,7 @@
 ##========== SOURCES ==========##
 
 SRC = 	$(GLAD_CPP) \
+		$(IMGUI_SRCS) \
 		main.cpp \
 		Scop.cpp \
 		Shader.cpp \
@@ -23,21 +24,27 @@ SRC = 	$(GLAD_CPP) \
 ##========== NAMES ==========##
 
 NAME = scop
-BONUS = scop_bonus
 SRCS_DIR = src/
 OBJS_DIR = obj/
-SRCS_B_DIR = src_bonus/
-OBJS_B_DIR = obj_bonus/
 INCLUDE_DIR = includes/
 LIBRARIES_DIR = libs/
 GLFW = $(LIBRARIES_DIR)glfw/
 FREE_TYPE = $(LIBRARIES_DIR)freetype-2.14.1/
+IMGUI = $(LIBRARIES_DIR)imgui/
+
 GLAD_CPP = glad.cpp # if in a subdirectory, update this
+IMGUI_SRCS =    ../$(IMGUI)imgui.cpp \
+                ../$(IMGUI)imgui_draw.cpp \
+                ../$(IMGUI)imgui_widgets.cpp \
+                ../$(IMGUI)imgui_tables.cpp \
+                ../$(IMGUI)imgui_demo.cpp \
+                ../$(IMGUI)backends/imgui_impl_opengl3.cpp \
+                ../$(IMGUI)backends/imgui_impl_glfw.cpp \
+                ../$(IMGUI)misc/cpp/imgui_stdlib.cpp
 
 ##========== OBJECTS ==========##
 
 OBJS = $(addprefix $(OBJS_DIR),$(SRC:.cpp=.o))
-OBJS_B = $(addprefix $(OBJS_B_DIR),$(SRC_B:.cpp=.o))
 
 ##========== COLORS ==========##
 
@@ -66,7 +73,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -MP -MMD -std=c++17
 LDFLAGS = $(LIBS)
-LIBS = -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR)
+LIBS = -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR) -I$(IMGUI)
 
 ##========== MODES ==========##
 
@@ -100,7 +107,7 @@ endif
 
 ##========== COMPILATION ==========##
 
-all: glfw glad freeType $(NAME)
+all: glfw glad freeType imgui $(NAME)
 
 glfw:
 	@if [ ! -d "$(GLFW)" ]; then \
@@ -123,18 +130,6 @@ glad:
 		rm -rf $(LIBRARIES_DIR)/glad_lib ; \
 	fi
 
-glad_bonus:
-	@if ls $(SRCS_B_DIR)$(dir $(GLAD_CPP)) | grep -q "glad"; then \
-  		echo "$(GREEN)glad Found, no need to pull$(BASE_COLOR)"; \
-  	else \
-		cd $(LIBRARIES_DIR) && git clone https://github.com/Dav1dde/glad.git glad_lib; \
-		python -m glad --out-path=glad_lib/build --generator=c; cd ..; \
-		mv $(LIBRARIES_DIR)/glad_lib/build/src/glad.c $(SRCS_B_DIR)glad.cpp ; \
-		mkdir -p $(LIBRARIES_DIR)glad/ && mv $(LIBRARIES_DIR)/glad_lib/build/include/glad/glad.h $(LIBRARIES_DIR)glad/ ; \
-		rm -rf $(LIBRARIES_DIR)/glad_lib ; \
-	fi
-
-
 freeType:
 	@if [ ! -d "$(FREE_TYPE)" ]; then \
 		echo "$(DARK_GRAY)Directory freetype-2.14.1 does not exist. Downloading...$(BASE_COLOR)"; \
@@ -145,6 +140,14 @@ freeType:
 	fi
 	@cd $(FREE_TYPE) && make setup ansi --silent && make -j$(nproc) --silent && cd ../..
 
+imgui:
+	@if [ ! -d "$(IMGUI)" ]; then \
+	    echo "$(DARK_PINK)Directory $(IMGUI) does not exist. Cloning the repository...$(BASE_COLOR)"; \
+	    git clone https://github.com/ocornut/imgui.git $(IMGUI); \
+	else \
+	    echo "$(GREEN)ImGui Found, no need to pull$(BASE_COLOR)"; \
+	fi
+
 $(NAME) : $(OBJS)
 	@echo ""
 	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -I$(INCLUDE_DIR) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a -flto
@@ -153,21 +156,17 @@ $(NAME) : $(OBJS)
 
 clean:
 	@rm -rf $(OBJS_DIR)
-	@rm -rf $(OBJS_B_DIR)
-	@rm -rf $(GLFW)/build
 
 fclean: clean
 	@rm -rf $(NAME)
-	@rm -rf $(BONUS)
-	@rm -rf $(GLFW)build/src/libglfw3.a
-	@rm -rf $(SRCS_DIR)$(GLAD_CPP)
-	@rm -rf $(SRCS_B_DIR)$(GLAD_CPP)
 	@echo "$(CYAN)Files cleaned$(BASE_COLOR)"
 
 cleanall: fclean
+	@rm -rf $(SRCS_DIR)$(GLAD_CPP)
 	@rm -rf $(FREE_TYPE)
-	@rm -rf $(GLFW)
 	@rm -rf $(LIBRARIES_DIR)glad
+	@rm -rf $(GLFW)
+	@rm -rf $(IMGUI)
 
 re: fclean all
 
@@ -485,4 +484,4 @@ define animation_15
 endef
 
 
-.PHONY : all glfw glad glad_bonus freeType clean fclean cleanall re run
+.PHONY : all glfw glad freeType imgui clean fclean cleanall re run

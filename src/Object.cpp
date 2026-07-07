@@ -39,6 +39,7 @@ Object::Object() {
 }
 
 Object::Object(const std::string &filepath) {
+	_totalIndicesCount = 0;
 	_vCount = 0;
 	_vnCount = 0;
 	_vtCount = 0;
@@ -46,6 +47,8 @@ Object::Object(const std::string &filepath) {
 	_indicesGroups["default"]._material = _currentMaterial;
 	_currentParsingMaterial = nullptr;
 	parse(filepath);
+	for (auto& it: _indicesGroups)
+		_totalIndicesCount += it.second._indices.size();
 }
 
 Object::Object(const Object &other) {
@@ -57,6 +60,7 @@ Object & Object::operator=(const Object &other) {
 		_objPath = other._objPath;
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
+		_totalIndicesCount = other._totalIndicesCount;
 		_currentMaterial = other._currentMaterial;
 		_currentParsingMaterial = other._currentParsingMaterial;
 		_vCount = other._vCount;
@@ -81,12 +85,22 @@ const faceGroupMap &Object::getIndicesGroup() const {
 	return _indicesGroups;
 }
 
+const size_t & Object::getTotalIndicesCount() const {
+	return _totalIndicesCount;
+}
+
+size_t Object::getTotalTextureCount() {
+	return _materials.size();
+}
+
 void Object::setVertices(const std::vector<Vertex> &vertices) {
 	_vertices = vertices;
 }
 
 void Object::setIndicesGroup(const faceGroupMap &indices) {
 	_indicesGroups = indices;
+	for (auto& it: _indicesGroups)
+		_totalIndicesCount += it.second._indices.size();
 }
 
 

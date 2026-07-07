@@ -7,7 +7,6 @@
 *examples*/
 *build/
 *.idea
-#*.gitignore
 
 libs/
 includes/glad
