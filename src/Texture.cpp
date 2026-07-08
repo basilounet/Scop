@@ -10,7 +10,7 @@ Texture::Texture() : _imgWidth(0), _imgHeight(0), _numColCh(0), _imgData(nullptr
 // std::cout << "Texture::Texture()" << std::endl;
 }
 
-Texture::Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum format, const GLenum pixelType) {
+Texture::Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum pixelType) {
 	_type = texType;
 	_imgData = stbi_load(path.c_str(), &_imgWidth, &_imgHeight, &_numColCh, 0);
 	if (!_imgData)
@@ -24,7 +24,8 @@ Texture::Texture(const std::string &path, const std::string& texType, const GLui
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _imgWidth, _imgHeight, 0, format, pixelType, _imgData);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _imgWidth, _imgHeight, 0,
+		path.substr(path.size() - 4) == ".png" ? GL_RGBA : GL_RGB, pixelType, _imgData);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(_imgData);
@@ -55,6 +56,18 @@ Texture::~Texture() {
 
 std::string Texture::getType() {
 	return _type;
+}
+
+GLuint Texture::getID() {
+	return _textureID;
+}
+
+int Texture::getWidth() {
+	return _imgWidth;
+}
+
+int Texture::getHeight() {
+	return _imgHeight;
 }
 
 /* ==================== METHODS ==================== */

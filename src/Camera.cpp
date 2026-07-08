@@ -208,7 +208,7 @@ void Camera::imGuiDisplay() {
 			ImGui::PushItemWidth(-FLT_MIN);
 			switch (column) {
 				case 0:
-					ImGui::Text("%.2f", (_speed + _speedModifier) * ((_keysPressed & SHIFT) ? _multiplier : 1.0f));
+					ImGui::Text("%.3f", (_speed + _speedModifier) * ((_keysPressed & SHIFT) ? _multiplier : 1.0f));
 					break;
 				case 1:
 					ImGui::DragFloat("##modifier", &_speedModifier, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");

@@ -36,7 +36,7 @@ struct MaterialData {
 	Vec3		_ke;
 	float		_ni;
 	float		_d;
-	std::string	_mapKd = "jiji.png";
+	std::string	_mapKd = "jiji2.png";
 	Texture		_mapKdTexture;
 };
 
@@ -63,11 +63,16 @@ public:
 	const size_t&						getTotalIndicesCount()	const;
 
 	static size_t						getTotalTextureCount();
+	static matMap&						getMaterials();
+	static MaterialData*				getMaterial(const std::string &name);
+	static void							addMaterial(MaterialData&& mat);
+
 
 	void								setVertices(const std::vector<Vertex>& vertices);
 	void								setIndicesGroup(const faceGroupMap &indices);
 
-	static void							createTexture(); // to be called after parsing all .mtl files
+	static void							loadTextures(); // to be called after parsing all .mtl files
+	static void							deleteTextures();
 
 private:
 	void								parse(const std::string& filepath,
@@ -94,7 +99,6 @@ private:
 	void								parseNi(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseD(const std::vector<std::string>& tokens, size_t lineCount);
 	void								parseMapKd(const std::vector<std::string>& tokens, size_t lineCount);
-	static MaterialData*			getMaterial(const std::string &name);
 
 	static const mapFunc				_objFunctionParser;
 	static const mapFunc				_matFunctionParser;

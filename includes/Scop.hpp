@@ -16,11 +16,12 @@
 # include <backends/imgui_impl_glfw.h>
 # include <backends/imgui_impl_opengl3.h>
 # include <misc/cpp/imgui_stdlib.h>
+# include <filesystem>
+# include <functional>
 
 # include "Camera.hpp"
 # include "Mesh.hpp"
 # include "Colors.hpp"
-# include "Characters.hpp"
 # include "Skybox.hpp"
 # include "math/Mat4.hpp"
 # include "math/Vec4.hpp"
@@ -47,6 +48,7 @@ private:
 	void	f3Display();
 	void	imGuiDisplay();
 	void	debugDisplay();
+	void	matDisplay();
 
 private:
 	int					_width, _height;
@@ -65,7 +67,6 @@ private:
 	GLint				_useColorPercentageUni;
 	float				_useColorPercentage;
 	GLint				_modelOffsetUni;
-	Characters			_characters;
 	unsigned int		_flags;
 	unsigned int		_keysPressed;
 	std::vector<float>	_averageFPS;

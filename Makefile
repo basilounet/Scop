@@ -14,7 +14,6 @@ SRC = 	$(GLAD_CPP) \
 		Camera.cpp \
 		Mesh.cpp \
 		Object.cpp \
-		Characters.cpp \
 		utils.cpp \
 		math/Vec2.cpp \
 		math/Vec3.cpp \
@@ -29,7 +28,6 @@ OBJS_DIR = obj/
 INCLUDE_DIR = includes/
 LIBRARIES_DIR = libs/
 GLFW = $(LIBRARIES_DIR)glfw/
-FREE_TYPE = $(LIBRARIES_DIR)freetype-2.14.1/
 IMGUI = $(LIBRARIES_DIR)imgui/
 
 GLAD_CPP = glad.cpp # if in a subdirectory, update this
@@ -73,7 +71,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -MP -MMD -std=c++17
 LDFLAGS = $(LIBS)
-LIBS = -I$(GLFW)include -I$(FREE_TYPE)include -I$(LIBRARIES_DIR) -I$(IMGUI)
+LIBS = -I$(GLFW)include -I$(LIBRARIES_DIR) -I$(IMGUI)
 
 ##========== MODES ==========##
 
@@ -107,7 +105,7 @@ endif
 
 ##========== COMPILATION ==========##
 
-all: glfw glad freeType imgui $(NAME)
+all: glfw glad imgui $(NAME)
 
 glfw:
 	@if [ ! -d "$(GLFW)" ]; then \
@@ -130,16 +128,6 @@ glad:
 		rm -rf $(LIBRARIES_DIR)/glad_lib ; \
 	fi
 
-freeType:
-	@if [ ! -d "$(FREE_TYPE)" ]; then \
-		echo "$(DARK_GRAY)Directory freetype-2.14.1 does not exist. Downloading...$(BASE_COLOR)"; \
-		wget https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz -P $(LIBRARIES_DIR); \
-		tar -xvzf $(LIBRARIES_DIR)freetype-2.14.1.tar.gz -C $(LIBRARIES_DIR); \
-		rm -rf $(LIBRARIES_DIR)freetype-2.14.1.tar.gz; \
-	else echo "$(GREEN)freetype-2.14.1 Found, no need to download$(BASE_COLOR)"; \
-	fi
-	@cd $(FREE_TYPE) && make setup ansi --silent && make -j$(nproc) --silent && cd ../..
-
 imgui:
 	@if [ ! -d "$(IMGUI)" ]; then \
 	    echo "$(DARK_PINK)Directory $(IMGUI) does not exist. Cloning the repository...$(BASE_COLOR)"; \
@@ -150,7 +138,7 @@ imgui:
 
 $(NAME) : $(OBJS)
 	@echo ""
-	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -I$(INCLUDE_DIR) $(GLFW)build/src/libglfw3.a $(FREE_TYPE)objs/libfreetype.a -flto
+	@$(CXX) -o $(NAME) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -I$(INCLUDE_DIR) $(GLFW)build/src/libglfw3.a -flto
 	@echo "$(PRP)Time elapsed: $(shell expr $(shell date +%s) - $(START_TIME)) seconds$(BASE_COLOR)"
 	@echo "$(GREEN)-= cpp compiled =-$(BASE_COLOR)"
 
@@ -163,7 +151,6 @@ fclean: clean
 
 cleanall: fclean
 	@rm -rf $(SRCS_DIR)$(GLAD_CPP)
-	@rm -rf $(FREE_TYPE)
 	@rm -rf $(LIBRARIES_DIR)glad
 	@rm -rf $(GLFW)
 	@rm -rf $(IMGUI)
@@ -484,4 +471,4 @@ define animation_15
 endef
 
 
-.PHONY : all glfw glad freeType imgui clean fclean cleanall re run
+.PHONY : all glfw glad imgui clean fclean cleanall re run

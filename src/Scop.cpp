@@ -8,7 +8,7 @@
 
 /* ==================== CONSTRUCTORS ==================== */
 
-Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _deltaTime(0.0f) {
+Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _deltaTime(0.0f), _currentEditMeshID(0) {
 	parse(ac, av);
 
 	glfwInit();
@@ -22,29 +22,22 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	glfwMakeContextCurrent(_window);
 	gladLoadGL();
 	// glfwMaximizeWindow(_window);
-	stbi_set_flip_vertically_on_load(true);
-	// Set the viewport to the size of the window
 	glViewport(0, 0 ,_width, _height);
 
 	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
-	_characters.loadASCII();
-	_characters.initializeGL(_width, _height);
 
-	// _objects[0].setTextures(textures);
-	Object::createTexture();
-	// std::cout << "Random place: " << _objects[0].getIndicesGroup()_materials["Material"]._mapKdTexture.getType() << std::endl;
+	Object::loadTextures();
 
 	for (size_t i = 0; i < _objects.size(); ++i) {
 		_mesh.push_back(Mesh(_objects[i]));
 		_mesh[i].setPosOffset(Vec3(i * 5, i * 5, i * 5));
 	}
-	// _mesh = Mesh(_objects[0]);
 	_skybox.createSkybox();
 	_rotation = 0.0f;
 	_averageFPS.resize(50, 60);
 	_useColorPercentage = 1.0f;
 	_usePercentage = 1.0f;
-	_flags = F3 | USE_COLORS | USE_TEX | LOCK_MOUSE;
+	_flags = USE_COLORS | USE_TEX | LOCK_MOUSE;
 
 	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 2.0f), &_flags);
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL + ((_flags & LOCK_MOUSE) == 0));
@@ -91,7 +84,6 @@ Scop& Scop::operator=(const Scop& other) {
 		_useColorPercentageUni = other._useColorPercentageUni;
 		_useColorPercentage = other._useColorPercentage;
 		_modelOffsetUni = other._modelOffsetUni;
-		_characters = other._characters;
 		_flags = other._flags;
 		_keysPressed = other._keysPressed;
 		_averageFPS = other._averageFPS;
@@ -101,7 +93,7 @@ Scop& Scop::operator=(const Scop& other) {
 }
 
 Scop::~Scop() {
-	_characters.deleteCharacters();
+	Object::deleteTextures();
 	std::for_each(_mesh.begin(), _mesh.end(), [](Mesh& mesh) { mesh.destroy(); });
 	_skybox.destroy();
 	_shaderProgram.deleteShader();
@@ -134,7 +126,6 @@ void Scop::gameLoop() {
 	while (!glfwWindowShouldClose(_window)) {
 		draw();
 		imGuiDisplay();
-		// f3Display();
 
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
@@ -161,8 +152,6 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 		scop->_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
 		std::cout << "Shaders reloaded" << std::endl;
 	}
-	if (key == GLFW_KEY_F3 && action == GLFW_PRESS)
-		scop->_flags ^= F3;
 	if (key == GLFW_KEY_R && action == GLFW_PRESS)
 		scop->_flags ^= USE_TEX;
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
@@ -229,41 +218,13 @@ void Scop::inputs() {
 		_mesh[0].addPosOffset({0.f, 0.f,  (float)_deltaTime});
 }
 
-void Scop::f3Display() {
-	// if ((_flags & F3) == 0)
-	// 	return;
-	// unsigned long sum = 0;
-	// for (const float fps : _averageFPS)
-	// 	sum += fps;
-	// _characters.render("Speed : " + roundStringFloat(std::to_string(_camera.getTotalSpeed()), 2),
-	// 		0.0f, _height - 20, .35f, Vec3(1, 1, 1));
-	// _characters.render("FPS : " + std::to_string(sum / _averageFPS.size()), 0, _height - 40, .35f, Vec3(1, 1, 1));
-	// _characters.render("Pos : " +
-	// 	roundStringFloat(std::to_string(_camera.getPos().x), 2) + "/" +
-	// 	roundStringFloat(std::to_string(_camera.getPos().y), 2) + "/" +
-	// 	roundStringFloat(std::to_string(_camera.getPos().z), 2),
-	// 	0, _height - 60, .35f, Vec3(1, 1, 1));
-	// _characters.render("Use percentage : " + roundStringFloat(std::to_string(_usePercentage), 2),
-	// 	0, _height - 80, .35f, Vec3(1, 1, 1));
-	// _characters.render("Use color percentage : " + roundStringFloat(std::to_string(_useColorPercentage), 2),
-	// 	0, _height - 100, .35f, Vec3(1, 1, 1));
-	// if (nbObjects != _objects.size() || triangleCount == 0) {
-	// 	triangleCount = 0;
-	// 	for (const auto& object : _objects)
-	// 		for (const auto& it : object.getIndicesGroup())
-	// 			triangleCount += it.second._indices.size() / 3;
-	// 	nbObjects = _objects.size();
-	// }
-	// _characters.render("Triangles : " + std::to_string(triangleCount),
-	// 	0, _height - 120, .35f, Vec3(1, 1, 1));
-}
-
 void Scop::imGuiDisplay() {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
 	debugDisplay();
+	matDisplay();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -273,9 +234,8 @@ void Scop::debugDisplay() {
 	if (ImGui::Begin("Debug", (bool *)__null)) {
 		static double sum = 50 * 60;
 		sum -= _averageFPS[0];
-		for (int i = 0; i < 49; ++i) {
+		for (int i = 0; i < 49; ++i)
 			_averageFPS[i] = _averageFPS[i + 1];
-		}
 		_averageFPS[49] = 1.0f / (float)_deltaTime;
 		sum += _averageFPS[49];
 		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.9f);
@@ -299,22 +259,20 @@ void Scop::debugDisplay() {
 		}
 
 
-		static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
-			ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerH |
-			ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-			ImGuiTableFlags_HighlightHoveredColumn | ImGuiTableFlags_RowBg;
+		static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit |
+			ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerH |
+			ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
+			ImGuiTableFlags_HighlightHoveredColumn | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoHostExtendX;
 		static ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_AngledHeader |
 			ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort;
-		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
-			ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoHostExtendX;
-		if (ImGui::BeginTable("Meshes infos", 4, flags)) {
+		if (ImGui::BeginTable("Meshes infos", 4, table_flags)) {
 			ImGui::TableSetupColumn("Total Meshes", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Total Vertices", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Total Triangle", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Total Textures", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableHeadersRow();
 			ImGui::TableNextRow();
-			for (int column = 0;  column < 4; column++) {
+			for (int column = 0;  column < 4; ++column) {
 				ImGui::TableSetColumnIndex(column);
 				ImGui::PushItemWidth(-FLT_MIN);
 				ImGui::Text(std::to_string([&]()->size_t{switch (column) {
@@ -332,21 +290,21 @@ void Scop::debugDisplay() {
 		const char* column_names[] = { "ID", "Vertices", "Triangles", "Textures" };
 		const int columns_count = IM_COUNTOF(column_names);
 
-		if (ImGui::BeginTable("table_angled_headers", columns_count, table_flags, ImVec2(0.0f, 200))) {
+		if (ImGui::BeginTable("table_angled_headers", columns_count, table_flags | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY, ImVec2(0.0f, 200))) {
 			ImGui::TableSetupColumn(column_names[0], ImGuiTableColumnFlags_NoHide, 0.f, 0);
 			for (int n = 1; n < columns_count; n++)
 				ImGui::TableSetupColumn(column_names[n], column_flags, 0.f, n);
 
 			ImGui::TableSetupScrollFreeze(1, 1);
-			ImGui::TableAngledHeadersRow(); // Draw angled headers for all columns with the ImGuiTableColumnFlags_AngledHeader flag.
-			ImGui::TableHeadersRow();       // Draw remaining headers and allow access to context-menu and other functions.
-			for (int row = 0; row < (int)_objects.size(); row++) {
+			ImGui::TableAngledHeadersRow();
+			ImGui::TableHeadersRow();
+			for (int row = 0; row < (int)_objects.size(); ++row) {
 				ImGui::PushID(row);
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 				ImGui::AlignTextToFramePadding();
 				ImGui::Text("%d", row);
-				for (int column = 1; column < columns_count; column++)
+				for (int column = 1; column < columns_count; ++column)
 					if (ImGui::TableSetColumnIndex(column)) {
 						switch (column) {
 							case 1:
@@ -362,6 +320,166 @@ void Scop::debugDisplay() {
 								break;
 						}
 					}
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
+		}
+	}
+	ImGui::End();
+}
+
+void Scop::matDisplay() {
+	if (ImGui::Begin("Materials && Textures", (bool *)__null)) {
+		const std::function<std::vector<std::string>()> loadResources = []() {
+			std::vector<std::string> items;
+			std::string path = "./resources/textures/";
+			for (const auto & entry : std::filesystem::directory_iterator(path))
+				if (entry.path().extension() != ".png" || entry.path().extension() != ".jpg")
+					items.push_back(entry.path().filename());
+			return items;
+		};
+		static std::vector<std::string> items = loadResources();
+		const std::function<void(MaterialData&, const bool)> resourcesCombo = [] (MaterialData& mat, const bool reloadTextures){
+			if (ImGui::BeginCombo("mapKd", mat._mapKd.c_str(), 0)) {
+				for (int n = 0; n < (int)items.size(); ++n) {
+					const bool is_selected = (mat._mapKd == items[n]);
+					if (ImGui::Selectable(items[n].c_str(), is_selected)) {
+						mat._mapKd = items[n];
+						if (reloadTextures)
+							Object::loadTextures();
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		};
+		const std::function<void(Texture&)> imagePopup = [](Texture& tex) {
+			if (ImGui::Button("Show image"))
+				ImGui::OpenPopup("my_select_popup");
+
+			if (ImGui::BeginPopup("my_select_popup")) {
+				if (ImGui::Button("Close"))
+					ImGui::CloseCurrentPopup();
+				ImGui::SameLine();
+				ImGui::Text("%ix%i", tex.getWidth(), tex.getHeight());
+				ImGui::SameLine();
+				static ExampleImageViewerData image_viewer;
+				ImVec2 canvas_size(tex.getWidth(), tex.getHeight());
+				ExampleImageViewer_DrawOptions(&image_viewer);
+				ExampleImageViewer_DrawCanvas(&image_viewer, canvas_size, tex.getID(), tex.getWidth(), tex.getHeight());
+				ImGui::EndPopup();
+			}
+		};
+
+		if (ImGui::Button("Flip textures (R)"))
+			_flags ^= USE_TEX;
+		ImGui::SameLine();
+		ImGui::Text("Texture use percentage : %.2f", _usePercentage);
+		ImGui::SameLine();
+		if (ImGui::Button("Flip colors (F)"))
+			_flags ^= USE_COLORS;
+		ImGui::SameLine();
+		ImGui::Text(", Color use percentage : %.2f", _useColorPercentage);
+
+		if (ImGui::Button("Create a new Material"))
+			ImGui::OpenPopup("Create Material");
+		ImGui::SameLine();
+		if (ImGui::Button("Refresh resources"))
+			items = loadResources();
+		ImGui::SameLine();
+		if (ImGui::Button("Reload Textures"))
+			Object::loadTextures();
+
+		static MaterialData mat = {};
+		if (ImGui::BeginPopupModal("Create Material", nullptr, ImGuiWindowFlags_MenuBar)) {
+			ImGui::InputText("name", &mat._name);
+			ImGui::DragFloat("ns", &mat._ns, 0.01f, -FLT_MAX, FLT_MAX);
+			drag3(mat._ka, "ka", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+			drag3(mat._kd, "kd", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+			drag3(mat._ks, "ks", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+			drag3(mat._ke, "ke", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+			ImGui::DragFloat("ni", &mat._ni, 0.01f, -FLT_MAX, FLT_MAX);
+			ImGui::DragFloat("d", &mat._d, 0.01f, -FLT_MAX, FLT_MAX);
+
+			resourcesCombo(mat, false);
+			// imagePopup(mat._mapKdTexture);
+			if (ImGui::Button("Add")) {
+				Object::addMaterial(std::move(mat));
+				Object::loadTextures();
+				mat = {};
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Reset"))
+				mat = {};
+			ImGui::SameLine();
+			if (ImGui::Button("Close"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+
+		static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit |
+			ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerH |
+			ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
+			ImGuiTableFlags_HighlightHoveredColumn | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoHostExtendX;
+
+		matMap& allMats = Object::getMaterials();
+
+		if (ImGui::BeginTable("Textures", 10, table_flags)) {
+			ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("ns", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("ka", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("kd", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("ks", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("ke", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("ni", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("d", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("mapKd", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("mapKdTexture", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableHeadersRow();
+			for (int row = 0;  row < (int)allMats.size(); ++row) {
+				MaterialData* mat = &allMats.at(std::next(allMats.begin(), row)->first);
+				Texture* tex = &mat->_mapKdTexture;
+
+				ImGui::PushID(row);
+				ImGui::TableNextRow();
+				for (int column = 0;  column < 10; ++column) {
+					ImGui::TableSetColumnIndex(column);
+					ImGui::PushItemWidth(-FLT_MIN);
+					switch (column) {
+						case 0:
+							ImGui::Text("%s", mat->_name.c_str());
+							break;
+						case 1:
+							ImGui::DragFloat("##ns", &mat->_ns, 0.01f, -FLT_MAX, FLT_MAX);
+							break;
+						case 2:
+							drag3(mat->_ka, "ka", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .9f, false);
+							break;
+						case 3:
+							drag3(mat->_kd, "kd", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .9f, false);
+							break;
+						case 4:
+							drag3(mat->_ks, "ks", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .9f, false);
+							break;
+						case 5:
+							drag3(mat->_ke, "ke", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .9f, false);
+							break;
+						case 6:
+							ImGui::DragFloat("##ni", &mat->_ni, 0.01f, -FLT_MAX, FLT_MAX);
+							break;
+						case 7:
+							ImGui::DragFloat("##d", &mat->_d, 0.01f, -FLT_MAX, FLT_MAX);
+							break;
+						case 8:
+							resourcesCombo(*mat, true);
+							break;
+						case 9:
+							imagePopup(*tex);
+							break ;
+						default: ;
+					}
+				}
 				ImGui::PopID();
 			}
 			ImGui::EndTable();

@@ -93,6 +93,22 @@ size_t Object::getTotalTextureCount() {
 	return _materials.size();
 }
 
+matMap& Object::getMaterials() {
+	return _materials;
+}
+
+MaterialData* Object::getMaterial(const std::string &name) {
+	if (_materials.find(name) != _materials.end())
+		return &_materials[name];
+	throw std::runtime_error(RED "Material " + name + " not loaded or doesn't exists." RESET);
+}
+
+void Object::addMaterial(MaterialData &&mat) {
+	if (_materials.find(mat._name) != _materials.end())
+		_materials[mat._name]._mapKdTexture.deleteTexture();
+	_materials[mat._name] = std::move(mat);
+}
+
 void Object::setVertices(const std::vector<Vertex> &vertices) {
 	_vertices = vertices;
 }
@@ -146,15 +162,22 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 	}
 }
 
-void Object::createTexture() {
+void Object::loadTextures() {
+	stbi_set_flip_vertically_on_load(true);
 	for (auto&[fst, snd] : _materials) {
 		try {
-			snd._mapKdTexture = Texture(_texturePath + snd._mapKd, "texture", 0, GL_RGBA, GL_UNSIGNED_BYTE);
+			snd._mapKdTexture.deleteTexture();
+			snd._mapKdTexture = Texture(_texturePath + snd._mapKd, "texture", 0, GL_UNSIGNED_BYTE);
 		}
 		catch (std::exception& e) {
 			std::cerr << e.what() << std::endl;
 		}
 	}
+}
+
+void Object::deleteTextures() {
+	for (auto& [fst, snd] : _materials)
+		snd._mapKdTexture.deleteTexture();
 }
 
 std::vector<std::string> Object::split(const std::string &str, const std::string& delims, const bool keepEmpty) {
@@ -424,10 +447,4 @@ void Object::parseMapKd(const std::vector<std::string> &tokens, size_t lineCount
 		throw std::runtime_error(RED "Invalid number of values specified for map_Kd at line ===> "
 			CYN + std::to_string(lineCount) + RESET);
 	_currentParsingMaterial->_mapKd = tokens[1];
-}
-
-MaterialData* Object::getMaterial(const std::string &name) {
-	if (_materials.find(name) != _materials.end())
-		return &_materials[name];
-	throw std::runtime_error(RED "Material " + name + " not loaded or doesn't exists." RESET);
 }

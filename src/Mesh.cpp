@@ -182,7 +182,7 @@ void Mesh::destroy() {
 	_vbo.deleteVBO();
 	_ebo.deleteEBO();
 
-	for (auto&[fst, snd] : _indicesGroup)
-		snd._material->_mapKdTexture.deleteTexture();
+	// for (auto&[fst, snd] : _indicesGroup)
+		// snd._material->_mapKdTexture.deleteTexture();
 }
 

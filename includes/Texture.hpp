@@ -15,6 +15,24 @@
 # include <Colors.hpp>
 
 class Texture {
+public:
+	Texture();
+	Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum pixelType);
+	Texture(const Texture& other);
+	~Texture();
+
+	Texture& operator=(const Texture& other);
+
+	std::string	getType();
+	GLuint		getID();
+	int			getWidth();
+	int			getHeight();
+
+	void bind() const;
+	void unbind() const;
+	void deleteTexture() const;
+	void texUnit(const Shader& shader, const std::string& uniform, const GLuint unit);
+
 private:
 	int				_imgWidth;
 	int				_imgHeight;
@@ -23,22 +41,6 @@ private:
 	GLuint			_textureID;
 	std::string		_type;
 	GLuint			_unit;
-
-public:
-	Texture();
-	Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum format, const GLenum pixelType);
-	Texture(const Texture& other);
-	~Texture();
-
-	Texture& operator=(const Texture& other);
-
-	std::string	getType();
-
-	void bind() const;
-	void unbind() const;
-	void deleteTexture() const;
-	void texUnit(const Shader& shader, const std::string& uniform, const GLuint unit);
-
 };
 
 
