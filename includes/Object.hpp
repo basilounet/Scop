@@ -57,7 +57,8 @@ public:
 	Object& operator=(const Object& other);
 	~Object();
 
-
+	const std::string&					getFilePath()			const;
+	const std::string&					getName()				const;
 	const std::vector<Vertex>&			getVertices()			const;
 	const faceGroupMap&					getIndicesGroup()		const;
 	const size_t&						getTotalIndicesCount()	const;
@@ -107,7 +108,8 @@ private:
 	static matMap		_materials; // TODO : make it non static?
 	static std::string	_texturePath;
 
-	std::string			_objPath;
+	std::string			_filePath;
+	std::string			_name;
 	std::vector<Vertex>	_vertices;
 	faceGroupMap		_indicesGroups;
 	size_t				_totalIndicesCount;

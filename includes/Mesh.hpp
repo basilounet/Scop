@@ -17,25 +17,19 @@
 
 
 class Mesh {
-private:
-	std::vector<Vertex>		_vertices;
-	faceGroupMap			_indicesGroup;
-	Vec3					_posOffset;
-	Vec3					_centerPoint;
-
-	VAO						_vao;
-	VBO						_vbo;
-	EBO						_ebo;
-
-
 public:
 	Mesh();
-	Mesh(const std::vector<Vertex>& vertices, const faceGroupMap& indicesGroup);
-	explicit Mesh(Object& object);
+	Mesh(const std::string& name, const std::vector<Vertex>& vertices, const faceGroupMap& indicesGroup);
+	explicit Mesh(const Object& object);
 	Mesh(const Mesh& other);
 
 	Mesh& operator=(const Mesh& other);
 	~Mesh();
+
+	const std::string&			getName()				const;
+	const std::vector<Vertex>&	getVertices()			const;
+	const faceGroupMap&			getIndicesGroup()		const;
+	const size_t&				getTotalIndicesCount()	const;
 
 	void	createMesh();
 
@@ -54,6 +48,20 @@ public:
 	void	addPosOffset(const Vec3& pos);
 
 	void	destroy();
+
+
+private:
+	std::vector<Vertex>		_vertices;
+	faceGroupMap			_indicesGroups;
+	Vec3					_posOffset;
+	Vec3					_centerPoint;
+
+	std::string				_name;
+	size_t					_totalIndicesCount;
+
+	VAO						_vao;
+	VBO						_vbo;
+	EBO						_ebo;
 };
 
 

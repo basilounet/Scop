@@ -57,7 +57,8 @@ Object::Object(const Object &other) {
 
 Object & Object::operator=(const Object &other) {
 	if (this != &other) {
-		_objPath = other._objPath;
+		_filePath = other._filePath;
+		_name = other._name;
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
 		_totalIndicesCount = other._totalIndicesCount;
@@ -71,6 +72,14 @@ Object & Object::operator=(const Object &other) {
 }
 
 Object::~Object() {
+}
+
+const std::string & Object::getFilePath() const {
+	return _filePath;
+}
+
+const std::string & Object::getName() const {
+	return _name;
 }
 
 
@@ -127,7 +136,8 @@ void Object::parse(const std::string &filepath, const mapFunc& func, size_t line
 	std::ifstream file;
 
 	if (lineCount == 0)
-		_objPath = filepath;
+		_filePath = filepath;
+	_name = _filePath.substr(_filePath.find_last_of("/\\") + 1, _filePath.size() - 4);
 	file.open(filepath.c_str());
 	if (!file.is_open())
 		throw std::runtime_error(RED "Failed to open file: " PRP + filepath + YLW " at line ===> "
@@ -327,7 +337,7 @@ void Object::parseMaterialLib(const std::vector<std::string>& tokens, const size
 			CYN + std::to_string(lineCount) + RESET);
 	for (size_t i = 1; i < tokens.size(); ++i) {
 		try {
-			std::filesystem::path fileDir = std::filesystem::path(_objPath).parent_path();
+			std::filesystem::path fileDir = std::filesystem::path(_filePath).parent_path();
 			std::filesystem::path fullPath = fileDir / tokens[i];
 			parse(fullPath.string(), _matFunctionParser, lineCount);
 		}
@@ -335,7 +345,7 @@ void Object::parseMaterialLib(const std::vector<std::string>& tokens, const size
 			std::cerr << e.what() << std::endl;
 		}
 	}
-	std::cout << std::endl << YLW "Parsing file: " PRP + _objPath + RESET << std::endl;
+	std::cout << std::endl << YLW "Parsing file: " PRP + _filePath + RESET << std::endl;
 }
 
 void Object::parseUseMaterial(const std::vector<std::string> &tokens, size_t lineCount) {

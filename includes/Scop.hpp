@@ -49,6 +49,7 @@ private:
 	void	imGuiDisplay();
 	void	debugDisplay();
 	void	matDisplay();
+	void	objectDisplay();
 
 private:
 	int					_width, _height;
@@ -57,8 +58,8 @@ private:
 	GLFWwindow*			_window;
 	Shader				_shaderProgram;
 	Camera				_camera;
-	std::vector<Object>	_objects;
-	std::vector<Mesh>	_mesh;
+	std::map<std::string, Object>	_objects;
+	std::vector<Mesh>	_meshes;
 	Skybox				_skybox;
 	GLint				_modelUni;
 	float				_rotation;

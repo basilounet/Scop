@@ -28,10 +28,12 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 	Object::loadTextures();
 
-	for (size_t i = 0; i < _objects.size(); ++i) {
-		_mesh.push_back(Mesh(_objects[i]));
-		_mesh[i].setPosOffset(Vec3(i * 5, i * 5, i * 5));
-	}
+	for (auto& obj: _objects)
+		_meshes.emplace_back(obj.second);
+	// for (size_t i = 0; i < _objects.size(); ++i) {
+		// _mesh.push_back(Mesh(_objects[i].second));
+		// _mesh[i].setPosOffset(Vec3(i * 5, i * 5, i * 5));
+	// }
 	_skybox.createSkybox();
 	_rotation = 0.0f;
 	_averageFPS.resize(50, 60);
@@ -75,7 +77,7 @@ Scop& Scop::operator=(const Scop& other) {
 		_shaderProgram = other._shaderProgram;
 		_camera = other._camera;
 		_objects = other._objects;
-		_mesh = other._mesh;
+		_meshes = other._meshes;
 		_skybox = other._skybox;
 		_modelUni = other._modelUni;
 		_rotation = other._rotation;
@@ -94,7 +96,7 @@ Scop& Scop::operator=(const Scop& other) {
 
 Scop::~Scop() {
 	Object::deleteTextures();
-	std::for_each(_mesh.begin(), _mesh.end(), [](Mesh& mesh) { mesh.destroy(); });
+	std::for_each(_meshes.begin(), _meshes.end(), [](Mesh& mesh) { mesh.destroy(); });
 	_skybox.destroy();
 	_shaderProgram.deleteShader();
 	glfwDestroyWindow(_window);
@@ -107,7 +109,9 @@ void Scop::parse(int ac, char **av) {
 	if (ac < 2)
 		throw std::runtime_error("Usage: ./scop <path_to_obj_file>");
 	for (int i = 1; i < ac; ++i) {
-		_objects.emplace_back(av[i]);
+		if (_objects.find(av[i]) == _objects.end())
+			_objects[std::string(av[i]).substr(std::string(av[i]).find_last_of("/\\") + 1)] = Object(av[i]);
+		// _objects.emplace_back(av[i]);
 	}
 }
 
@@ -187,17 +191,17 @@ void Scop::draw() {
 	oscil += _deltaTime * 3.f;
 	_rotation += _deltaTime * 10.0f;
 
-	for (size_t i = 0; i < _objects.size(); ++i) {
+	for (size_t i = 0; i < _meshes.size(); ++i) {
 		Mat4 model = Mat4(1.0f);
-		// model = rotate(model, radians(_rotation), Vec3(cos(oscil), sin(oscil), cos(oscil)));
+		model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
 		model = rotate(model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
-		model = translate(model, -_mesh[i].getCenterPoint());
+		model = translate(model, -_meshes[i].getCenterPoint());
 
 		// _mesh[i].addPosOffset(cos(oscil));
 		glUniformMatrix4fv(_modelUni, 1, GL_FALSE, model.m);
-		glUniform3f(_modelOffsetUni, _mesh[i].getposOffset().x, _mesh[i].getposOffset().y, _mesh[i].getposOffset().z);
+		glUniform3f(_modelOffsetUni, _meshes[i].getposOffset().x, _meshes[i].getposOffset().y, _meshes[i].getposOffset().z);
 
-		_mesh[i].draw(_shaderProgram, _camera);
+		_meshes[i].draw(_shaderProgram, _camera);
 		// _mesh[i].addPosOffset(-cos(oscil));
 	}
 	_skybox.drawSkybox(_camera);
@@ -205,17 +209,17 @@ void Scop::draw() {
 
 void Scop::inputs() {
 	if (glfwGetKey(_window, GLFW_KEY_KP_7) == GLFW_PRESS)
-		_mesh[_currentEditMeshID].addPosOffset({0.f, -(float)_deltaTime, 0.f});
+		_meshes[_currentEditMeshID].addPosOffset({0.f, -(float)_deltaTime, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_9) == GLFW_PRESS)
-		_mesh[_currentEditMeshID].addPosOffset({0.f,  (float)_deltaTime, 0.f});
+		_meshes[_currentEditMeshID].addPosOffset({0.f,  (float)_deltaTime, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_6) == GLFW_PRESS)
-		_mesh[0].addPosOffset({ (float)_deltaTime, 0.f, 0.f});
+		_meshes[0].addPosOffset({ (float)_deltaTime, 0.f, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_4) == GLFW_PRESS)
-		_mesh[0].addPosOffset({-(float)_deltaTime, 0.f, 0.f});
+		_meshes[0].addPosOffset({-(float)_deltaTime, 0.f, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_8) == GLFW_PRESS)
-		_mesh[0].addPosOffset({0.f, 0.f, -(float)_deltaTime});
+		_meshes[0].addPosOffset({0.f, 0.f, -(float)_deltaTime});
 	if (glfwGetKey(_window, GLFW_KEY_KP_5) == GLFW_PRESS)
-		_mesh[0].addPosOffset({0.f, 0.f,  (float)_deltaTime});
+		_meshes[0].addPosOffset({0.f, 0.f,  (float)_deltaTime});
 }
 
 void Scop::imGuiDisplay() {
@@ -225,6 +229,7 @@ void Scop::imGuiDisplay() {
 
 	debugDisplay();
 	matDisplay();
+	objectDisplay();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -242,20 +247,20 @@ void Scop::debugDisplay() {
 		ImGui::PlotLines("Fps", _averageFPS.data(), _averageFPS.size(), 0, std::to_string(sum / _averageFPS.size()).c_str(), 0.f);
 
 		_camera.imGuiDisplay();
-		static unsigned int	nbObjects = 0;
+		static unsigned int	nbMeshes = 0;
 		static unsigned int totalTriangleCount = 0;
 		static unsigned int totalVerticesCount = 0;
 		static unsigned int totalTexturesCount = 0;
-		if (nbObjects != _objects.size()) {
+		if (nbMeshes != _meshes.size()) {
 			totalTriangleCount = 0;
 			totalVerticesCount = 0;
 			totalTexturesCount = Object::getTotalTextureCount();
-			for (const auto& object : _objects) {
-				totalVerticesCount += object.getVertices().size();
-				for (const auto& it : object.getIndicesGroup())
+			for (const auto& mesh : _meshes) {
+				totalVerticesCount += mesh.getVertices().size();
+				for (const auto& it : mesh.getIndicesGroup())
 					totalTriangleCount += it.second._indices.size() / 3;
 			}
-			nbObjects = _objects.size();
+			nbMeshes = _meshes.size();
 		}
 
 
@@ -263,8 +268,6 @@ void Scop::debugDisplay() {
 			ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerH |
 			ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
 			ImGuiTableFlags_HighlightHoveredColumn | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoHostExtendX;
-		static ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_AngledHeader |
-			ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort;
 		if (ImGui::BeginTable("Meshes infos", 4, table_flags)) {
 			ImGui::TableSetupColumn("Total Meshes", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Total Vertices", ImGuiTableColumnFlags_WidthFixed);
@@ -276,51 +279,13 @@ void Scop::debugDisplay() {
 				ImGui::TableSetColumnIndex(column);
 				ImGui::PushItemWidth(-FLT_MIN);
 				ImGui::Text(std::to_string([&]()->size_t{switch (column) {
-						case 0: return _objects.size();
+						case 0: return _meshes.size();
 						case 1: return totalVerticesCount;
 						case 2: return totalTriangleCount;
 						case 3: return totalTexturesCount;
 						default: return 0;
 					}}()).c_str(),
 					0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
-			}
-			ImGui::EndTable();
-		}
-
-		const char* column_names[] = { "ID", "Vertices", "Triangles", "Textures" };
-		const int columns_count = IM_COUNTOF(column_names);
-
-		if (ImGui::BeginTable("table_angled_headers", columns_count, table_flags | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY, ImVec2(0.0f, 200))) {
-			ImGui::TableSetupColumn(column_names[0], ImGuiTableColumnFlags_NoHide, 0.f, 0);
-			for (int n = 1; n < columns_count; n++)
-				ImGui::TableSetupColumn(column_names[n], column_flags, 0.f, n);
-
-			ImGui::TableSetupScrollFreeze(1, 1);
-			ImGui::TableAngledHeadersRow();
-			ImGui::TableHeadersRow();
-			for (int row = 0; row < (int)_objects.size(); ++row) {
-				ImGui::PushID(row);
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("%d", row);
-				for (int column = 1; column < columns_count; ++column)
-					if (ImGui::TableSetColumnIndex(column)) {
-						switch (column) {
-							case 1:
-								ImGui::Text("%zu", _objects[row].getVertices().size());
-								break;
-							case 2:
-								ImGui::Text("%zu", _objects[row].getTotalIndicesCount() / 3);
-								break;
-							case 3:
-								ImGui::Text("%zu", _objects[row].getIndicesGroup().size());
-								break;
-							default:
-								break;
-						}
-					}
-				ImGui::PopID();
 			}
 			ImGui::EndTable();
 		}
@@ -355,8 +320,11 @@ void Scop::matDisplay() {
 			}
 		};
 		const std::function<void(Texture&)> imagePopup = [](Texture& tex) {
-			if (ImGui::Button("Show image"))
+			static ExampleImageViewerData image_viewer;
+			if (ImGui::Button("Show image")) {
+				image_viewer.ViewOffset = ImVec2(tex.getWidth() / 2.f, tex.getHeight() / 2.f);
 				ImGui::OpenPopup("my_select_popup");
+			}
 
 			if (ImGui::BeginPopup("my_select_popup")) {
 				if (ImGui::Button("Close"))
@@ -364,7 +332,9 @@ void Scop::matDisplay() {
 				ImGui::SameLine();
 				ImGui::Text("%ix%i", tex.getWidth(), tex.getHeight());
 				ImGui::SameLine();
-				static ExampleImageViewerData image_viewer;
+				if (ImGui::Button("Recenter"))
+					image_viewer.ViewOffset = ImVec2(tex.getWidth() / 2.f, tex.getHeight() / 2.f);
+				ImGui::SameLine();
 				ImVec2 canvas_size(tex.getWidth(), tex.getHeight());
 				ExampleImageViewer_DrawOptions(&image_viewer);
 				ExampleImageViewer_DrawCanvas(&image_viewer, canvas_size, tex.getID(), tex.getWidth(), tex.getHeight());
@@ -480,6 +450,92 @@ void Scop::matDisplay() {
 						default: ;
 					}
 				}
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
+		}
+	}
+	ImGui::End();
+}
+
+void Scop::objectDisplay() {
+	const std::function<std::vector<std::string>()> loadObjectsNames = [&]() {
+		std::vector<std::string> items;
+		std::string path = "./resources/objects/";
+		for (const auto & entry : std::filesystem::directory_iterator(path))
+			if (entry.path().extension() == ".obj" && _objects.find(entry.path().filename()) == _objects.end())
+				items.push_back(entry.path().filename());
+		return items;
+	};
+	static std::vector<std::string> items = loadObjectsNames();
+
+	static int selectedObj = 0;
+	if (ImGui::Begin("Objects", (bool *)__null)) {
+		if (!items.empty() && ImGui::BeginCombo("Unloaded Objects", items[selectedObj].c_str(), 0)) {
+			for (int n = 0; n < (int)items.size(); ++n) {
+				const bool is_selected = (selectedObj == n);
+				if (ImGui::Selectable(items[n].c_str(), is_selected))
+					selectedObj = n;
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		if (!items.empty() && ImGui::Button("Add Object")) {
+			_objects[items[selectedObj]] = Object("./resources/objects/" + items[selectedObj]);
+			_meshes.emplace_back(_objects[items[selectedObj]]);
+			Object::loadTextures();
+			items = loadObjectsNames();
+			selectedObj = 0;
+		}
+		const char* column_names[] = { "Name", "Vertices", "Triangles", "Textures", "Add" };
+		const int columns_count = IM_COUNTOF(column_names);
+
+		static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuter |
+			ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_Borders | ImGuiTableFlags_HighlightHoveredColumn | ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_NoHostExtendX;
+		static ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_AngledHeader |
+			ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort;
+
+		if (ImGui::BeginTable("table_angled_headers", columns_count, table_flags | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY, ImVec2(0.0f, 200))) {
+			ImGui::TableSetupColumn(column_names[0], ImGuiTableColumnFlags_NoHide, 0.f, 0);
+			for (int n = 1; n < columns_count; n++)
+				ImGui::TableSetupColumn(column_names[n], column_flags, 0.f, n);
+
+			ImGui::TableAngledHeadersRow();
+			ImGui::TableHeadersRow();
+			for (int row = 0; row < (int)_objects.size(); ++row) {
+				Object obj = _objects.at(std::next(_objects.begin(), row)->first);
+				ImGui::PushID(row);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("%s", obj.getName().c_str());
+
+				for (int column = 1; column < columns_count; ++column)
+					if (ImGui::TableSetColumnIndex(column)) {
+						switch (column) {
+							case 1:
+								ImGui::Text("%zu", obj.getVertices().size());
+								break;
+							case 2:
+								ImGui::Text("%zu", obj.getTotalIndicesCount() / 3);
+								break;
+							case 3:
+								ImGui::Text("%zu", obj.getIndicesGroup().size());
+								break;
+							case 4:
+								if (ImGui::Button("Add Mesh")) {
+									_meshes.emplace_back(obj);
+									_meshes.back().setPosOffset(Vec3(1));
+								}
+								break;
+							default:
+								break;
+						}
+					}
 				ImGui::PopID();
 			}
 			ImGui::EndTable();

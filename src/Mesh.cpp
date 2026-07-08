@@ -10,17 +10,21 @@
 Mesh::Mesh() {
 }
 
-Mesh::Mesh(const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
+Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
 		_vertices(vertices),
-		_indicesGroup(indicesGroup) {
+		_indicesGroups(indicesGroup),
+		_name(name),
+		_totalIndicesCount(0) {
 	calculateNormals();
 	assignTexCoords();
 	calculateCenter();
 	createMesh();
+	for (auto& it: _indicesGroups)
+		_totalIndicesCount += it.second._indices.size();
 }
 
-Mesh::Mesh(Object& object) {
-	*this = Mesh(object.getVertices(), object.getIndicesGroup()); // TODO : put references?
+Mesh::Mesh(const Object& object) {
+	*this = Mesh(object.getName(), object.getVertices(), object.getIndicesGroup());
 }
 
 Mesh::Mesh(const Mesh& other) {
@@ -30,9 +34,11 @@ Mesh::Mesh(const Mesh& other) {
 Mesh & Mesh::operator=(const Mesh &other) {
 	if (this != &other) {
 		_vertices = other._vertices;
-		_indicesGroup = other._indicesGroup;
+		_indicesGroups = other._indicesGroups;
 		_posOffset = other._posOffset;
 		_centerPoint = other._centerPoint;
+		_totalIndicesCount = other._totalIndicesCount;
+		_name = other._name;
 		_vao = other._vao;
 		_vbo = other._vbo;
 		_ebo = other._ebo;
@@ -41,6 +47,22 @@ Mesh & Mesh::operator=(const Mesh &other) {
 }
 
 Mesh::~Mesh() {
+}
+
+const std::string & Mesh::getName() const {
+	return _name;
+}
+
+const std::vector<Vertex> & Mesh::getVertices() const {
+	return _vertices;
+}
+
+const faceGroupMap & Mesh::getIndicesGroup() const {
+	return _indicesGroups;
+}
+
+const size_t & Mesh::getTotalIndicesCount() const {
+	return _totalIndicesCount;
 }
 
 
@@ -52,7 +74,7 @@ void Mesh::createMesh() {
 	_vao.bind();
 
 	_vbo = VBO(_vertices);
-	_ebo = EBO(_indicesGroup);
+	_ebo = EBO(_indicesGroups);
 
 	_vao.linkAttrib(_vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0); // Position
 	_vao.linkAttrib(_vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(GLfloat))); // normal
@@ -72,7 +94,7 @@ void Mesh::draw(const Shader &shader, const Camera &camera) {
 	size_t offset = 0;
 	Texture *texture = nullptr;
 	size_t i = 0;
-	for (auto&[fst, snd] : _indicesGroup) {
+	for (auto&[fst, snd] : _indicesGroups) {
 		texture = &snd._material->_mapKdTexture;
 		texture->texUnit(shader, texture->getType() + std::to_string(i), i);
 		texture->bind();
@@ -118,7 +140,7 @@ void Mesh::assignTexCoords() {
 void Mesh::calculateNormals() {
 	std::vector<GLuint> indicesBuffer;
 
-	for (auto &group : _indicesGroup) {
+	for (auto &group : _indicesGroups) {
 		indicesBuffer.insert(indicesBuffer.end(), group.second._indices.begin(), group.second._indices.end());
 	}
 	// for (auto & vertice : _vertices) {
@@ -158,7 +180,9 @@ void Mesh::setVertices(const std::vector<Vertex> &vertices) {
 }
 
 void Mesh::setIndices(const faceGroupMap &indices) {
-	_indicesGroup = indices;
+	_indicesGroups = indices;
+	for (auto& it: _indicesGroups)
+		_totalIndicesCount += it.second._indices.size();
 }
 
 void Mesh::setPosOffset(const Vec3 &pos) {
