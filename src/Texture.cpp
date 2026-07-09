@@ -89,7 +89,7 @@ void Texture::texUnit(const Shader& shader, const std::string& uniform, const GL
 	// Gets the location of the uniform
 	// std::cout << "Setting texture unit " << unit << " to " << uniform << std::endl;
 	// std::cout << "texType: " << _type << "$" << std::endl;
-	GLuint texUni = glGetUniformLocation(shader.getId(), uniform.c_str());
+	GLuint texUni = glGetUniformLocation(shader.getID(), uniform.c_str());
 	// Shader needs to be activated before changing the value of a uniform
 	shader.activate();
 	// Sets the value of the uniform

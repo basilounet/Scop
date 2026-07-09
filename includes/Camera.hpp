@@ -30,11 +30,13 @@ public:
 	Vec3		getUp() const;
 	float		getSpeed() const;
 	float		getTotalSpeed() const;
+	int			getWidth() const;
+	int			getHeight() const;
 
 	void		setWindowSize(int width, int height);
 
 	void		updateMatrix(float FOVDeg, float nearPlane, float farPlane);
-	void		matrix(const Shader& shader, const char* uniform);
+	void		sendUniforms(const Shader& shader) const;
 	void		inputs(GLFWwindow* window, double deltaTime);
 	void		inputHooks(GLFWwindow* window, int key, int scancode, int action, int mods);
 	void		imGuiDisplay();

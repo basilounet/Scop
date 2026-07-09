@@ -65,7 +65,7 @@ Shader::~Shader() {
 
 /* ==================== GETTERS / SETTERS ==================== */
 
-GLuint Shader::getId() const {
+GLuint Shader::getID() const {
 	return _id;
 }
 

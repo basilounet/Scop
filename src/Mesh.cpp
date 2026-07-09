@@ -35,7 +35,7 @@ Mesh & Mesh::operator=(const Mesh &other) {
 	if (this != &other) {
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
-		_posOffset = other._posOffset;
+		_pos = other._pos;
 		_centerPoint = other._centerPoint;
 		_totalIndicesCount = other._totalIndicesCount;
 		_name = other._name;
@@ -59,6 +59,10 @@ const std::vector<Vertex> & Mesh::getVertices() const {
 
 const faceGroupMap & Mesh::getIndicesGroup() const {
 	return _indicesGroups;
+}
+
+Vec3 & Mesh::getPos() {
+	return _pos;
 }
 
 const size_t & Mesh::getTotalIndicesCount() const {
@@ -85,7 +89,7 @@ void Mesh::createMesh() {
 	_ebo.unbind();
 }
 
-void Mesh::draw(const Shader &shader, const Camera &camera) {
+void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model) {
 	(void)camera;
 	shader.activate();
 
@@ -94,6 +98,13 @@ void Mesh::draw(const Shader &shader, const Camera &camera) {
 	size_t offset = 0;
 	Texture *texture = nullptr;
 	size_t i = 0;
+
+	camera.sendUniforms(shader);
+	glUniform3f(glGetUniformLocation(shader.getID(), "translation"), _pos.x, _pos.y, _pos.z);
+	glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model"), 1, GL_FALSE, model.m);
+	glUniform1f(glGetUniformLocation(shader.getID(), "iTime"), glfwGetTime());
+	glUniform3f(glGetUniformLocation(shader.getID(), "iResolution"), (float)camera.getWidth(), (float)camera.getHeight(), 0.f);
+
 	for (auto&[fst, snd] : _indicesGroups) {
 		texture = &snd._material->_mapKdTexture;
 		texture->texUnit(shader, texture->getType() + std::to_string(i), i);
@@ -101,6 +112,7 @@ void Mesh::draw(const Shader &shader, const Camera &camera) {
 		glDrawElements(GL_TRIANGLES, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
 		// glDrawElements(GL_LINE, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
 		offset += snd._indices.size();
+		// PRINT "loop: " << i CENDL;
 		++i;
 		texture->unbind();
 	}
@@ -160,7 +172,8 @@ void Mesh::calculateNormals() {
 	for (size_t i = 0; i < _vertices.size(); ++i) {
 		// if (_vertices[i].normal.x == 0 && _vertices[i].normal.y == 0 && _vertices[i].normal.z == 0)
 		// _vertices[i].normal = Vec3(0.0f, 0.0f, 1.0f);
-		_vertices[i].normal = normalize(_vertices[i].normal).abs();
+		_vertices[i].normal = normalize(_vertices[i].normal);
+		// _vertices[i].normal = normalize(_vertices[i].normal).abs();
 		_vertices[i].color = _vertices[i].normal;
 		// std::cout << "Vertex " YLW"["<<i<<"]" RESET" normal: "
 		// << _vertices[i].normal.x << ", " << _vertices[i].normal.y << ", " << _vertices[i].normal.z << std::endl;
@@ -169,10 +182,6 @@ void Mesh::calculateNormals() {
 
 const Vec3 & Mesh::getCenterPoint() const {
 	return _centerPoint;
-}
-
-const Vec3 & Mesh::getposOffset() const {
-	return _posOffset;
 }
 
 void Mesh::setVertices(const std::vector<Vertex> &vertices) {
@@ -185,20 +194,20 @@ void Mesh::setIndices(const faceGroupMap &indices) {
 		_totalIndicesCount += it.second._indices.size();
 }
 
-void Mesh::setPosOffset(const Vec3 &pos) {
+void Mesh::setPos(const Vec3 &pos) {
 	// _vao.deleteVAO();
 	// _vbo.deleteVBO();
 	// _ebo.deleteEBO();
 	// std::for_each(_vertices.begin(), _vertices.end(), [&](Vertex &v) {v.position += -_posOffset + pos; });
-	_posOffset = pos;
+	_pos = pos;
 	// calculateNormals();
 	// assignTexCoords();
 	// calculateCenter();
 	// createMesh();
 }
 
-void Mesh::addPosOffset(const Vec3 &pos) {
-	_posOffset += pos;
+void Mesh::addPos(const Vec3 &pos) {
+	_pos += pos;
 }
 
 void Mesh::destroy() {

@@ -29,7 +29,7 @@ public:
 
 	Shader& operator=(const Shader& other);
 
-	GLuint	getId() const;
+	GLuint	getID() const;
 
 	void	activate() const;
 	void	deleteShader() const;

@@ -45,11 +45,11 @@ private:
 
 	void	draw();
 	void	inputs();
-	void	f3Display();
 	void	imGuiDisplay();
 	void	debugDisplay();
 	void	matDisplay();
 	void	objectDisplay();
+	void	meshesDisplay();
 
 private:
 	int					_width, _height;
@@ -57,21 +57,20 @@ private:
 	double				_deltaTime;
 	GLFWwindow*			_window;
 	Shader				_shaderProgram;
+	Shader				_outlineShader;
 	Camera				_camera;
 	std::map<std::string, Object>	_objects;
 	std::vector<Mesh>	_meshes;
 	Skybox				_skybox;
-	GLint				_modelUni;
 	float				_rotation;
 	GLint				_usePercentageUni;
 	float				_usePercentage;
 	GLint				_useColorPercentageUni;
 	float				_useColorPercentage;
-	GLint				_modelOffsetUni;
 	unsigned int		_flags;
 	unsigned int		_keysPressed;
 	std::vector<float>	_averageFPS;
-	unsigned int		_currentEditMeshID;
+	int					_currentEditMeshID;
 
 };
 

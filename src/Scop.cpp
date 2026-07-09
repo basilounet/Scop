@@ -25,6 +25,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	glViewport(0, 0 ,_width, _height);
 
 	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
+	_outlineShader = Shader("./src/shaders/outline.vert", "./src/shaders/outline.frag");
 
 	Object::loadTextures();
 
@@ -40,6 +41,10 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	_useColorPercentage = 1.0f;
 	_usePercentage = 1.0f;
 	_flags = USE_COLORS | USE_TEX | LOCK_MOUSE;
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 2.0f), &_flags);
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL + ((_flags & LOCK_MOUSE) == 0));
@@ -75,17 +80,16 @@ Scop& Scop::operator=(const Scop& other) {
 		_deltaTime = other._deltaTime;
 		_window = other._window;
 		_shaderProgram = other._shaderProgram;
+		_outlineShader = other._outlineShader;
 		_camera = other._camera;
 		_objects = other._objects;
 		_meshes = other._meshes;
 		_skybox = other._skybox;
-		_modelUni = other._modelUni;
 		_rotation = other._rotation;
 		_usePercentageUni = other._usePercentageUni;
 		_usePercentage = other._usePercentage;
 		_useColorPercentageUni = other._useColorPercentageUni;
 		_useColorPercentage = other._useColorPercentage;
-		_modelOffsetUni = other._modelOffsetUni;
 		_flags = other._flags;
 		_keysPressed = other._keysPressed;
 		_averageFPS = other._averageFPS;
@@ -117,15 +121,12 @@ void Scop::parse(int ac, char **av) {
 
 void Scop::gameLoop() {
 	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
-	_modelUni = glGetUniformLocation(_shaderProgram.getId(), "model");
-	_usePercentageUni = glGetUniformLocation(_shaderProgram.getId(), "useTexturePercentage");
-	_useColorPercentageUni = glGetUniformLocation(_shaderProgram.getId(), "useColorPercentage");
-	_modelOffsetUni = glGetUniformLocation(_shaderProgram.getId(), "modelOffset");
+	_usePercentageUni = glGetUniformLocation(_shaderProgram.getID(), "useTexturePercentage");
+	_useColorPercentageUni = glGetUniformLocation(_shaderProgram.getID(), "useColorPercentage");
 
 	_lastTime = glfwGetTime() - 1.0f / 60.0f;
 	_shaderProgram.activate();
 	// glUniform1i(tex1IdUni, 0);
-	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(_window)) {
 		draw();
@@ -154,6 +155,7 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 	if (key == GLFW_KEY_R && mods & GLFW_MOD_CONTROL && action == GLFW_PRESS) {
 		scop->_shaderProgram.deleteShader();
 		scop->_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
+		scop->_outlineShader = Shader("./src/shaders/outline.vert", "./src/shaders/outline.frag");
 		std::cout << "Shaders reloaded" << std::endl;
 	}
 	if (key == GLFW_KEY_R && action == GLFW_PRESS)
@@ -172,36 +174,46 @@ void Scop::draw() {
 	_deltaTime = glfwGetTime() - _lastTime;
 	_lastTime = glfwGetTime();
 	glClearColor(0.4f, 0.2f, 0.6f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	_shaderProgram.activate();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	inputs();
+	_shaderProgram.activate();
 	_camera.inputs(_window, _deltaTime);
 	_camera.updateMatrix(45.0f, 0.1f, 1000.0f);
-	_camera.matrix(_shaderProgram, "camMatrix");
+	_camera.sendUniforms(_shaderProgram);
 
 	_usePercentage = std::clamp(_usePercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
 	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
 
 	glUniform1f(_usePercentageUni, _usePercentage);
 	glUniform1f(_useColorPercentageUni, _useColorPercentage);
-	glUniform3f(glGetUniformLocation(_shaderProgram.getId(), "camPos"), _camera.getPos().x, _camera.getPos().y, _camera.getPos().z);
 
-	static float oscil = 0.0f;
+	static float oscil = 0.0f; // TODO : remove
 	oscil += _deltaTime * 3.f;
 	_rotation += _deltaTime * 10.0f;
 
 	for (size_t i = 0; i < _meshes.size(); ++i) {
 		Mat4 model = Mat4(1.0f);
-		model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
 		model = rotate(model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
+		// model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
 		model = translate(model, -_meshes[i].getCenterPoint());
-
 		// _mesh[i].addPosOffset(cos(oscil));
-		glUniformMatrix4fv(_modelUni, 1, GL_FALSE, model.m);
-		glUniform3f(_modelOffsetUni, _meshes[i].getposOffset().x, _meshes[i].getposOffset().y, _meshes[i].getposOffset().z);
 
-		_meshes[i].draw(_shaderProgram, _camera);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+		_meshes[i].draw(_shaderProgram, _camera, model);
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+
+		_outlineShader.activate();
+		glUniform1f(glGetUniformLocation(_outlineShader.getID(), "outlining"), 0.2f);
+		_meshes[i].draw(_outlineShader, _camera, model);
+
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
+
+
 		// _mesh[i].addPosOffset(-cos(oscil));
 	}
 	_skybox.drawSkybox(_camera);
@@ -209,17 +221,17 @@ void Scop::draw() {
 
 void Scop::inputs() {
 	if (glfwGetKey(_window, GLFW_KEY_KP_7) == GLFW_PRESS)
-		_meshes[_currentEditMeshID].addPosOffset({0.f, -(float)_deltaTime, 0.f});
+		_meshes[_currentEditMeshID].addPos({0.f, -(float)_deltaTime, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_9) == GLFW_PRESS)
-		_meshes[_currentEditMeshID].addPosOffset({0.f,  (float)_deltaTime, 0.f});
+		_meshes[_currentEditMeshID].addPos({0.f,  (float)_deltaTime, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_6) == GLFW_PRESS)
-		_meshes[0].addPosOffset({ (float)_deltaTime, 0.f, 0.f});
+		_meshes[0].addPos({ (float)_deltaTime, 0.f, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_4) == GLFW_PRESS)
-		_meshes[0].addPosOffset({-(float)_deltaTime, 0.f, 0.f});
+		_meshes[0].addPos({-(float)_deltaTime, 0.f, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_8) == GLFW_PRESS)
-		_meshes[0].addPosOffset({0.f, 0.f, -(float)_deltaTime});
+		_meshes[0].addPos({0.f, 0.f, -(float)_deltaTime});
 	if (glfwGetKey(_window, GLFW_KEY_KP_5) == GLFW_PRESS)
-		_meshes[0].addPosOffset({0.f, 0.f,  (float)_deltaTime});
+		_meshes[0].addPos({0.f, 0.f,  (float)_deltaTime});
 }
 
 void Scop::imGuiDisplay() {
@@ -230,6 +242,7 @@ void Scop::imGuiDisplay() {
 	debugDisplay();
 	matDisplay();
 	objectDisplay();
+	meshesDisplay();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -529,7 +542,7 @@ void Scop::objectDisplay() {
 							case 4:
 								if (ImGui::Button("Add Mesh")) {
 									_meshes.emplace_back(obj);
-									_meshes.back().setPosOffset(Vec3(1));
+									_meshes.back().setPos(Vec3(1));
 								}
 								break;
 							default:
@@ -543,3 +556,13 @@ void Scop::objectDisplay() {
 	}
 	ImGui::End();
 }
+
+void Scop::meshesDisplay() {
+	if (ImGui::Begin("Meshes", (bool *)__null)) {
+		ImGui::DragInt("current Edit Mesh ID", &_currentEditMeshID, 1, 0, _meshes.size() - 1);
+		drag3(const_cast<Vec3&>(_meshes[_currentEditMeshID].getPos()), "posOffset", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+	}
+	ImGui::End();
+}
+
+

@@ -27,25 +27,25 @@ public:
 	~Mesh();
 
 	const std::string&			getName()				const;
+	const Vec3&					getCenterPoint()		const;
 	const std::vector<Vertex>&	getVertices()			const;
 	const faceGroupMap&			getIndicesGroup()		const;
+	Vec3&						getPos();
 	const size_t&				getTotalIndicesCount()	const;
 
 	void	createMesh();
 
-	void	draw(const Shader& shader, const Camera& camera);
+	void	draw(const Shader &shader, const Camera &camera, const Mat4& model);
 
 	void	calculateCenter();
 	void	assignTexCoords();
 	void	calculateNormals();
 
-	const Vec3&	getCenterPoint()	const;
-	const Vec3&	getposOffset()		const;
 
 	void	setVertices(const std::vector<Vertex>& vertices);
 	void	setIndices(const faceGroupMap& indices);
-	void	setPosOffset(const Vec3& pos);
-	void	addPosOffset(const Vec3& pos);
+	void	setPos(const Vec3& pos);
+	void	addPos(const Vec3& pos);
 
 	void	destroy();
 
@@ -53,7 +53,7 @@ public:
 private:
 	std::vector<Vertex>		_vertices;
 	faceGroupMap			_indicesGroups;
-	Vec3					_posOffset;
+	Vec3					_pos;
 	Vec3					_centerPoint;
 
 	std::string				_name;

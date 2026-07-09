@@ -12,13 +12,13 @@ out vec2 texCoord;
 
 uniform mat4 camMatrix;
 uniform mat4 model;
-uniform vec3 modelOffset;
+uniform vec3 translation;
+uniform float time;
 
 void main()
 {
-   currentPos = vec3(model * vec4(aPos, 1.0f)) + modelOffset;
-//   currentPos = aPos;
-   normal = aNormal;
+   currentPos = vec3(model * vec4(aPos, 1.0f)) + translation;
+   normal = abs(aNormal);
    color = aColor;
    texCoord = aTex;
 

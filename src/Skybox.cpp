@@ -165,8 +165,8 @@ void Skybox::drawSkybox(const Camera &camera) {
 	// view(3, 3) = 1.f;
 	// view = mat4(mat3(lookAt(camera.Position, camera.Position + camera.Orientation, camera.Up)));
 	projection = perspective(45.0f, (float)_width / _height, 0.1f, 100.0f);
-	glUniformMatrix4fv(glGetUniformLocation(_shader.getId(), "view"), 1, GL_FALSE, view.m);
-	glUniformMatrix4fv(glGetUniformLocation(_shader.getId(), "projection"), 1, GL_FALSE, projection.m);
+	glUniformMatrix4fv(glGetUniformLocation(_shader.getID(), "view"), 1, GL_FALSE, view.m);
+	glUniformMatrix4fv(glGetUniformLocation(_shader.getID(), "projection"), 1, GL_FALSE, projection.m);
 
 	//! Draws the cubemap as the last object so we can save a bit of performance by discarding all fragments
 	//! where an object is present (a depth of 1.0f will always fail against any object's depth value)

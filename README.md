@@ -33,6 +33,7 @@ Then run the program with the following command:
 - Real time and interactive advanced debug infos on screen
 - Real time Textures, Materials and Object loading
 - Real time Meshes changes
+- Meshes outline
 - SkyBox
 - Object animations
 - Multiples objects and meshing each having their own pos, orientation, scale, animations, etc. They also can be tweaked in real time and individually with ImGui.

@@ -82,6 +82,14 @@ float Camera::getTotalSpeed() const {
 	return _speed + _speedModifier;
 }
 
+int Camera::getWidth() const {
+	return _width;
+}
+
+int Camera::getHeight() const {
+	return _height;
+}
+
 void Camera::setWindowSize(const int width, const int height) {
 	_width = width;
 	_height = height;
@@ -97,8 +105,10 @@ void Camera::updateMatrix(const float FOVDeg, const float nearPlane, const float
 	_cameraMatrix = projM * viewM;
 }
 
-void Camera::matrix(const Shader &shader, const char *uniform) {
-	glUniformMatrix4fv(glGetUniformLocation(shader.getId(), uniform), 1, GL_FALSE, _cameraMatrix.m);
+void Camera::sendUniforms(const Shader &shader) const {
+	glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "camMatrix"), 1, GL_FALSE, _cameraMatrix.m);
+	glUniform3f(glGetUniformLocation(shader.getID(), "camPos"), _pos.x, _pos.y, _pos.z);
+
 }
 
 void Camera::inputs(GLFWwindow *window, const double deltaTime) {
