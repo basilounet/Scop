@@ -36,7 +36,6 @@ Then run the program with the following command:
 - Meshes outline
 - SkyBox
 - Object animations
-- Multiples objects and meshing each having their own pos, orientation, scale, animations, etc. They also can be tweaked in real time and individually with ImGui.
+- Multiples objects and meshing each having their own pos, orientation, scale, outline, shader, animations, etc. They also can be tweaked in real time and individually with ImGui.
 - Splines
-- Static Normals
 ---

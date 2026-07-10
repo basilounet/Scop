@@ -13,6 +13,7 @@ Mesh::Mesh() {
 Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
 		_vertices(vertices),
 		_indicesGroups(indicesGroup),
+		_outlineSize(.2f),
 		_name(name),
 		_totalIndicesCount(0) {
 	calculateNormals();
@@ -21,6 +22,10 @@ Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const f
 	createMesh();
 	for (auto& it: _indicesGroups)
 		_totalIndicesCount += it.second._indices.size();
+
+	_useColorPercentage = 1.0f;
+	_useTexPercentage = 1.0f;
+	_flags = USE_COLORS | USE_TEX;
 }
 
 Mesh::Mesh(const Object& object) {
@@ -36,9 +41,14 @@ Mesh & Mesh::operator=(const Mesh &other) {
 		_vertices = other._vertices;
 		_indicesGroups = other._indicesGroups;
 		_pos = other._pos;
+		_flags = other._flags;
 		_centerPoint = other._centerPoint;
-		_totalIndicesCount = other._totalIndicesCount;
+		_useTexPercentage = other._useTexPercentage;
+		_useColorPercentage = other._useColorPercentage;
+		_useOutlinePercentage = other._useOutlinePercentage;
+		_outlineSize = other._outlineSize;
 		_name = other._name;
+		_totalIndicesCount = other._totalIndicesCount;
 		_vao = other._vao;
 		_vbo = other._vbo;
 		_ebo = other._ebo;
@@ -69,6 +79,36 @@ const size_t & Mesh::getTotalIndicesCount() const {
 	return _totalIndicesCount;
 }
 
+float & Mesh::getOutlineSize() {
+	return _outlineSize;
+}
+
+const Vec3 & Mesh::getCenterPoint() const {
+	return _centerPoint;
+}
+
+void Mesh::setVertices(const std::vector<Vertex> &vertices) {
+	_vertices = vertices;
+}
+
+void Mesh::setIndices(const faceGroupMap &indices) {
+	_indicesGroups = indices;
+	for (auto& it: _indicesGroups)
+		_totalIndicesCount += it.second._indices.size();
+}
+
+void Mesh::setPos(const Vec3 &pos) {
+	_pos = pos;
+}
+
+void Mesh::addPos(const Vec3 &pos) {
+	_pos += pos;
+}
+
+void Mesh::switchFlags(const int flag) {
+	_flags ^= flag;
+}
+
 
 /* ==================== METHODS ==================== */
 
@@ -89,8 +129,16 @@ void Mesh::createMesh() {
 	_ebo.unbind();
 }
 
-void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model) {
-	(void)camera;
+void Mesh::updateStates(const double &deltaTime) {
+	_useTexPercentage = std::clamp(_useTexPercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
+	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
+	_useOutlinePercentage = std::clamp(_useOutlinePercentage + (_flags & USE_OUTLINE_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
+}
+
+void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type) {
+	if ((type == "mesh" && (_flags & HIDE_MESH)) ||
+		(type == "outline" && (_flags & HIDE_OUTLINE)))
+		return;
 	shader.activate();
 
 	_vao.bind();
@@ -104,6 +152,10 @@ void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model) {
 	glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model"), 1, GL_FALSE, model.m);
 	glUniform1f(glGetUniformLocation(shader.getID(), "iTime"), glfwGetTime());
 	glUniform3f(glGetUniformLocation(shader.getID(), "iResolution"), (float)camera.getWidth(), (float)camera.getHeight(), 0.f);
+	glUniform1f(glGetUniformLocation(shader.getID(), "useTexturePercentage"), _useTexPercentage);
+	glUniform1f(glGetUniformLocation(shader.getID(), "useColorPercentage"), _useColorPercentage);
+	glUniform1f(glGetUniformLocation(shader.getID(), "useOutlinePercentage"), _useOutlinePercentage);
+	glUniform1f(glGetUniformLocation(shader.getID(), "outlining"), _outlineSize);
 
 	for (auto&[fst, snd] : _indicesGroups) {
 		texture = &snd._material->_mapKdTexture;
@@ -180,34 +232,34 @@ void Mesh::calculateNormals() {
 	}
 }
 
-const Vec3 & Mesh::getCenterPoint() const {
-	return _centerPoint;
-}
+void Mesh::imGuiMeshInfos() {
+	ImGui::Text("Name : %s", _name.c_str());
+	drag3(_pos, "posOffset", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+	ImGui::DragFloat("Ouline Size", &_outlineSize, .01f, 0.f, FLT_MAX);
 
-void Mesh::setVertices(const std::vector<Vertex> &vertices) {
-	_vertices = vertices;
-}
+	if (ImGui::Button("Flip tex (R)"))
+		_flags ^= USE_TEX;
+	ImGui::SameLine();
+	ImGui::Text("%.0f%%", _useTexPercentage * 100);
+	ImGui::SameLine();
+	if (ImGui::Button("Flip colors (F)"))
+		_flags ^= USE_COLORS;
+	ImGui::SameLine();
+	ImGui::Text("%.0f%%", _useColorPercentage * 100);
+	ImGui::SameLine();
+	if (ImGui::Button("Flip Outline"))
+		_flags ^= USE_OUTLINE_PER;
+	if (ImGui::Button("Hide mesh (G)"))
+		_flags ^= HIDE_MESH;
+	ImGui::SameLine();
+	ImGui::Text("%s", (_flags & HIDE_MESH) != 0 ? "true" : "false");
+	ImGui::SameLine();
+	if (ImGui::Button("Hide Outline (H)"))
+		_flags ^= HIDE_OUTLINE;
+	ImGui::SameLine();
+	ImGui::Text("%s", (_flags & HIDE_OUTLINE) != 0 ? "true" : "false");
 
-void Mesh::setIndices(const faceGroupMap &indices) {
-	_indicesGroups = indices;
-	for (auto& it: _indicesGroups)
-		_totalIndicesCount += it.second._indices.size();
-}
 
-void Mesh::setPos(const Vec3 &pos) {
-	// _vao.deleteVAO();
-	// _vbo.deleteVBO();
-	// _ebo.deleteEBO();
-	// std::for_each(_vertices.begin(), _vertices.end(), [&](Vertex &v) {v.position += -_posOffset + pos; });
-	_pos = pos;
-	// calculateNormals();
-	// assignTexCoords();
-	// calculateCenter();
-	// createMesh();
-}
-
-void Mesh::addPos(const Vec3 &pos) {
-	_pos += pos;
 }
 
 void Mesh::destroy() {

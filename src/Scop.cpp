@@ -38,9 +38,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	_skybox.createSkybox();
 	_rotation = 0.0f;
 	_averageFPS.resize(50, 60);
-	_useColorPercentage = 1.0f;
-	_usePercentage = 1.0f;
-	_flags = USE_COLORS | USE_TEX | LOCK_MOUSE;
+	_flags = LOCK_MOUSE;
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
@@ -86,10 +84,6 @@ Scop& Scop::operator=(const Scop& other) {
 		_meshes = other._meshes;
 		_skybox = other._skybox;
 		_rotation = other._rotation;
-		_usePercentageUni = other._usePercentageUni;
-		_usePercentage = other._usePercentage;
-		_useColorPercentageUni = other._useColorPercentageUni;
-		_useColorPercentage = other._useColorPercentage;
 		_flags = other._flags;
 		_keysPressed = other._keysPressed;
 		_averageFPS = other._averageFPS;
@@ -120,12 +114,7 @@ void Scop::parse(int ac, char **av) {
 }
 
 void Scop::gameLoop() {
-	// const GLuint tex1IdUni = glGetUniformLocation(_shaderProgram.getId(), "texture1");
-	_usePercentageUni = glGetUniformLocation(_shaderProgram.getID(), "useTexturePercentage");
-	_useColorPercentageUni = glGetUniformLocation(_shaderProgram.getID(), "useColorPercentage");
-
 	_lastTime = glfwGetTime() - 1.0f / 60.0f;
-	_shaderProgram.activate();
 	// glUniform1i(tex1IdUni, 0);
 
 	while (!glfwWindowShouldClose(_window)) {
@@ -159,9 +148,17 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 		std::cout << "Shaders reloaded" << std::endl;
 	}
 	if (key == GLFW_KEY_R && action == GLFW_PRESS)
-		scop->_flags ^= USE_TEX;
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_TEX);
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
-		scop->_flags ^= USE_COLORS;
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_COLORS);
+	if (key == GLFW_KEY_T && action == GLFW_PRESS)
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_OUTLINE_PER);
+	if (key == GLFW_KEY_G && action == GLFW_PRESS)
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(HIDE_MESH);
+	if (key == GLFW_KEY_H && action == GLFW_PRESS)
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(HIDE_OUTLINE);
+	if (key == GLFW_KEY_C && action == GLFW_PRESS)
+		scop->_currentEditMeshID = ++scop->_currentEditMeshID % scop->_meshes.size();
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 }
@@ -182,39 +179,36 @@ void Scop::draw() {
 	_camera.updateMatrix(45.0f, 0.1f, 1000.0f);
 	_camera.sendUniforms(_shaderProgram);
 
-	_usePercentage = std::clamp(_usePercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
-	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)_deltaTime * 0.5f, 0.0f, 1.0f);
-
-	glUniform1f(_usePercentageUni, _usePercentage);
-	glUniform1f(_useColorPercentageUni, _useColorPercentage);
-
 	static float oscil = 0.0f; // TODO : remove
 	oscil += _deltaTime * 3.f;
 	_rotation += _deltaTime * 10.0f;
+	// double xPos, yPos;
+	// glfwGetCursorPos(_window, &xPos, &yPos);
+	// Vec2 mousePos = Vec2((float)xPos, (float)yPos);
 
 	for (size_t i = 0; i < _meshes.size(); ++i) {
 		Mat4 model = Mat4(1.0f);
 		model = rotate(model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
 		// model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
 		model = translate(model, -_meshes[i].getCenterPoint());
-		// _mesh[i].addPosOffset(cos(oscil));
+		// _meshes[i].addPos(cos(oscil));
 
+		_meshes[i].updateStates(_deltaTime);
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilMask(0xFF);
-		_meshes[i].draw(_shaderProgram, _camera, model);
+		_meshes[i].draw(_shaderProgram, _camera, model, "mesh");
 
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 		glStencilMask(0x00);
 
 		_outlineShader.activate();
-		glUniform1f(glGetUniformLocation(_outlineShader.getID(), "outlining"), 0.2f);
-		_meshes[i].draw(_outlineShader, _camera, model);
+		_meshes[i].draw(_outlineShader, _camera, model, "outline");
 
 		glStencilMask(0xFF);
 		glStencilFunc(GL_ALWAYS, 0, 0xFF);
 
 
-		// _mesh[i].addPosOffset(-cos(oscil));
+		// _meshes[i].addPos(-cos(oscil));
 	}
 	_skybox.drawSkybox(_camera);
 }
@@ -225,13 +219,13 @@ void Scop::inputs() {
 	if (glfwGetKey(_window, GLFW_KEY_KP_9) == GLFW_PRESS)
 		_meshes[_currentEditMeshID].addPos({0.f,  (float)_deltaTime, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_6) == GLFW_PRESS)
-		_meshes[0].addPos({ (float)_deltaTime, 0.f, 0.f});
+		_meshes[_currentEditMeshID].addPos({ (float)_deltaTime, 0.f, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_4) == GLFW_PRESS)
-		_meshes[0].addPos({-(float)_deltaTime, 0.f, 0.f});
+		_meshes[_currentEditMeshID].addPos({-(float)_deltaTime, 0.f, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_8) == GLFW_PRESS)
-		_meshes[0].addPos({0.f, 0.f, -(float)_deltaTime});
+		_meshes[_currentEditMeshID].addPos({0.f, 0.f, -(float)_deltaTime});
 	if (glfwGetKey(_window, GLFW_KEY_KP_5) == GLFW_PRESS)
-		_meshes[0].addPos({0.f, 0.f,  (float)_deltaTime});
+		_meshes[_currentEditMeshID].addPos({0.f, 0.f,  (float)_deltaTime});
 }
 
 void Scop::imGuiDisplay() {
@@ -354,16 +348,6 @@ void Scop::matDisplay() {
 				ImGui::EndPopup();
 			}
 		};
-
-		if (ImGui::Button("Flip textures (R)"))
-			_flags ^= USE_TEX;
-		ImGui::SameLine();
-		ImGui::Text("Texture use percentage : %.2f", _usePercentage);
-		ImGui::SameLine();
-		if (ImGui::Button("Flip colors (F)"))
-			_flags ^= USE_COLORS;
-		ImGui::SameLine();
-		ImGui::Text(", Color use percentage : %.2f", _useColorPercentage);
 
 		if (ImGui::Button("Create a new Material"))
 			ImGui::OpenPopup("Create Material");
@@ -560,7 +544,7 @@ void Scop::objectDisplay() {
 void Scop::meshesDisplay() {
 	if (ImGui::Begin("Meshes", (bool *)__null)) {
 		ImGui::DragInt("current Edit Mesh ID", &_currentEditMeshID, 1, 0, _meshes.size() - 1);
-		drag3(const_cast<Vec3&>(_meshes[_currentEditMeshID].getPos()), "posOffset", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+		_meshes[_currentEditMeshID].imGuiMeshInfos();
 	}
 	ImGui::End();
 }

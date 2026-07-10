@@ -13,7 +13,6 @@ out vec2 texCoord;
 uniform mat4 camMatrix;
 uniform mat4 model;
 uniform vec3 translation;
-uniform float time;
 
 void main()
 {

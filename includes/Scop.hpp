@@ -63,10 +63,6 @@ private:
 	std::vector<Mesh>	_meshes;
 	Skybox				_skybox;
 	float				_rotation;
-	GLint				_usePercentageUni;
-	float				_usePercentage;
-	GLint				_useColorPercentageUni;
-	float				_useColorPercentage;
 	unsigned int		_flags;
 	unsigned int		_keysPressed;
 	std::vector<float>	_averageFPS;

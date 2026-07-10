@@ -32,20 +32,24 @@ public:
 	const faceGroupMap&			getIndicesGroup()		const;
 	Vec3&						getPos();
 	const size_t&				getTotalIndicesCount()	const;
-
-	void	createMesh();
-
-	void	draw(const Shader &shader, const Camera &camera, const Mat4& model);
-
-	void	calculateCenter();
-	void	assignTexCoords();
-	void	calculateNormals();
-
+	float&						getOutlineSize();
 
 	void	setVertices(const std::vector<Vertex>& vertices);
 	void	setIndices(const faceGroupMap& indices);
 	void	setPos(const Vec3& pos);
 	void	addPos(const Vec3& pos);
+	void	switchFlags(int flag);
+
+	void	createMesh();
+
+	void	updateStates(const double& deltaTime);
+	void	draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type = "mesh");
+
+	void	calculateCenter();
+	void	assignTexCoords();
+	void	calculateNormals();
+
+	void	imGuiMeshInfos();
 
 	void	destroy();
 
@@ -55,6 +59,12 @@ private:
 	faceGroupMap			_indicesGroups;
 	Vec3					_pos;
 	Vec3					_centerPoint;
+
+	int						_flags;
+	float					_useTexPercentage;
+	float					_useColorPercentage;
+	float					_useOutlinePercentage;
+	float					_outlineSize;
 
 	std::string				_name;
 	size_t					_totalIndicesCount;
