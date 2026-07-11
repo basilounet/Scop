@@ -25,7 +25,8 @@ Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const f
 
 	_useColorPercentage = 1.0f;
 	_useTexPercentage = 1.0f;
-	_flags = USE_COLORS | USE_TEX;
+	_useOutlinePercentage = 1.0f;
+	_flags = USE_COLORS | USE_TEX | HIDE_OUTLINE | USE_OUTLINE_PER;
 }
 
 Mesh::Mesh(const Object& object) {
@@ -109,6 +110,10 @@ void Mesh::switchFlags(const int flag) {
 	_flags ^= flag;
 }
 
+void Mesh::addFlags(const int flag) {
+	_flags |= flag;
+}
+
 
 /* ==================== METHODS ==================== */
 
@@ -135,9 +140,9 @@ void Mesh::updateStates(const double &deltaTime) {
 	_useOutlinePercentage = std::clamp(_useOutlinePercentage + (_flags & USE_OUTLINE_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 }
 
-void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type) {
+void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type, const bool forceOutline) {
 	if ((type == "mesh" && (_flags & HIDE_MESH)) ||
-		(type == "outline" && (_flags & HIDE_OUTLINE)))
+		(type == "outline" && !forceOutline && (_flags & HIDE_OUTLINE)))
 		return;
 	shader.activate();
 
@@ -247,7 +252,7 @@ void Mesh::imGuiMeshInfos() {
 	ImGui::SameLine();
 	ImGui::Text("%.0f%%", _useColorPercentage * 100);
 	ImGui::SameLine();
-	if (ImGui::Button("Flip Outline"))
+	if (ImGui::Button("Flip Outline (T)"))
 		_flags ^= USE_OUTLINE_PER;
 	if (ImGui::Button("Hide mesh (G)"))
 		_flags ^= HIDE_MESH;

@@ -19,6 +19,7 @@ void main()
    currentPos = vec3(model * vec4(aPos, 1.0f)) + translation;
    normal = abs(aNormal);
    color = aColor;
+//   texCoord = currentPos.xy; // Static texture coordinates based on position
    texCoord = aTex;
 
    gl_Position = camMatrix * vec4(currentPos, 1.0f);

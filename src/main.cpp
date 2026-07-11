@@ -1,8 +1,7 @@
 #include <iostream>
 #include <Scop.hpp>
 
-int	main(int ac, char **av)
-{
+int	main(int ac, char **av) {
 	try {
 		Scop scop = Scop(ac, av);
 		scop.gameLoop();

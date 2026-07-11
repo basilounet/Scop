@@ -86,6 +86,10 @@ float & Vec3::operator[](int place) {
 	}
 }
 
+bool Vec3::operator==(const Vec3 &other) const {
+	return (x == other.x && y == other.y && z == other.z);
+}
+
 
 /* ==================== METHODS ==================== */
 
@@ -131,6 +135,14 @@ float dot(const Vec3 &a, const Vec3 &b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+float length(const Vec3 &a) {
+	return std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+float length2(const Vec3 &a) {
+	return a.x * a.x + a.y * a.y + a.z * a.z;
+}
+
 Vec3 rotate(const Vec3& v, float angle, const Vec3 &b) {
 	return (v * std::cos(angle)) +
 		   (cross(b, v) * std::sin(angle)) +
@@ -150,6 +162,18 @@ Vec3 normalize(const Vec3 &v) {
 	if (len > 0.0f)
 		return v / len;
 	return {0};
+}
+
+Vec3 lerp(const Vec3 &a, const Vec3 &b, const float t) {
+	return a * (1 - t) + b * t;
+}
+
+float distance(const Vec3 &a, const Vec3 &b) {
+	return length(b - a);
+}
+
+float distance2(const Vec3 &a, const Vec3 &b) {
+	return length2(b - a);
 }
 
 std::ostream & operator<<(std::ostream &os, const Vec3 &v) {

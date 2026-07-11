@@ -39,11 +39,12 @@ public:
 	void	setPos(const Vec3& pos);
 	void	addPos(const Vec3& pos);
 	void	switchFlags(int flag);
+	void	addFlags(int flag);
 
 	void	createMesh();
 
 	void	updateStates(const double& deltaTime);
-	void	draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type = "mesh");
+	void	draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type = "mesh", bool forceOutline = false);
 
 	void	calculateCenter();
 	void	assignTexCoords();

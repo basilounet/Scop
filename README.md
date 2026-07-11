@@ -31,11 +31,10 @@ Then run the program with the following command:
 - Better texture mapping
 - Moving Camera
 - Real time and interactive advanced debug infos on screen
-- Real time Textures, Materials and Object loading
-- Real time Meshes changes
-- Meshes outline
+- Real time Textures, Materials and Object loading AND changes
+- Meshes outlines with shaders
 - SkyBox
 - Object animations
-- Multiples objects and meshing each having their own pos, orientation, scale, outline, shader, animations, etc. They also can be tweaked in real time and individually with ImGui.
+- Multiples objects and meshing each having their own pos, orientation, outline, scale, shader, animations, etc. They also can be tweaked in real time and individually with ImGui.
 - Splines
 ---

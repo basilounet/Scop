@@ -19,6 +19,7 @@ SRC = 	$(GLAD_CPP) \
 		math/Vec3.cpp \
 		math/Vec4.cpp \
 		math/Mat4.cpp \
+		math/Spline.cpp \
 
 ##========== NAMES ==========##
 
@@ -69,7 +70,7 @@ CXX = c++
 
 ##========== FLAGS ==========##
 
-CXXFLAGS = -Wall -Wextra -Werror -MP -MMD -std=c++17
+CXXFLAGS = -Wall -Wextra -Werror -MP -MMD -std=gnu++2b
 LDFLAGS = $(LIBS)
 LIBS = -I$(GLFW)include -I$(LIBRARIES_DIR) -I$(IMGUI)
 

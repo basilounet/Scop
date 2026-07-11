@@ -26,6 +26,8 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 	_shaderProgram = Shader("./src/shaders/default.vert", "./src/shaders/default.frag");
 	_outlineShader = Shader("./src/shaders/outline.vert", "./src/shaders/outline.frag");
+	Spline::_shader = Shader("./src/shaders/splinePreview.vert", "./src/shaders/splinePreview.frag");
+
 
 	Object::loadTextures();
 
@@ -97,6 +99,8 @@ Scop::~Scop() {
 	std::for_each(_meshes.begin(), _meshes.end(), [](Mesh& mesh) { mesh.destroy(); });
 	_skybox.destroy();
 	_shaderProgram.deleteShader();
+	_outlineShader.deleteShader();
+	Spline::_shader.deleteShader();
 	glfwDestroyWindow(_window);
 	glfwTerminate();
 }
@@ -147,6 +151,11 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 		scop->_outlineShader = Shader("./src/shaders/outline.vert", "./src/shaders/outline.frag");
 		std::cout << "Shaders reloaded" << std::endl;
 	}
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	if (scop->_meshes.empty())
+		return ;
 	if (key == GLFW_KEY_R && action == GLFW_PRESS)
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_TEX);
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
@@ -159,8 +168,6 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(HIDE_OUTLINE);
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 		scop->_currentEditMeshID = ++scop->_currentEditMeshID % scop->_meshes.size();
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
 }
 
 
@@ -202,11 +209,10 @@ void Scop::draw() {
 		glStencilMask(0x00);
 
 		_outlineShader.activate();
-		_meshes[i].draw(_outlineShader, _camera, model, "outline");
+		_meshes[i].draw(_outlineShader, _camera, model, "outline", (int)i == _currentEditMeshID);
 
 		glStencilMask(0xFF);
 		glStencilFunc(GL_ALWAYS, 0, 0xFF);
-
 
 		// _meshes[i].addPos(-cos(oscil));
 	}
@@ -214,6 +220,8 @@ void Scop::draw() {
 }
 
 void Scop::inputs() {
+	if (_meshes.empty())
+		return ;
 	if (glfwGetKey(_window, GLFW_KEY_KP_7) == GLFW_PRESS)
 		_meshes[_currentEditMeshID].addPos({0.f, -(float)_deltaTime, 0.f});
 	if (glfwGetKey(_window, GLFW_KEY_KP_9) == GLFW_PRESS)
@@ -524,10 +532,8 @@ void Scop::objectDisplay() {
 								ImGui::Text("%zu", obj.getIndicesGroup().size());
 								break;
 							case 4:
-								if (ImGui::Button("Add Mesh")) {
+								if (ImGui::Button("Add Mesh"))
 									_meshes.emplace_back(obj);
-									_meshes.back().setPos(Vec3(1));
-								}
 								break;
 							default:
 								break;
@@ -543,8 +549,16 @@ void Scop::objectDisplay() {
 
 void Scop::meshesDisplay() {
 	if (ImGui::Begin("Meshes", (bool *)__null)) {
+		if (_meshes.empty()) {
+			ImGui::End();
+			return ;
+		}
 		ImGui::DragInt("current Edit Mesh ID", &_currentEditMeshID, 1, 0, _meshes.size() - 1);
 		_meshes[_currentEditMeshID].imGuiMeshInfos();
+		if (ImGui::Button("Delete Mesh")) {
+			_meshes.erase(_meshes.begin() + _currentEditMeshID);
+			_currentEditMeshID = _currentEditMeshID % (_meshes.empty() ? 1 : _meshes.size());
+		}
 	}
 	ImGui::End();
 }

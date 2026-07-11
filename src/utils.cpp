@@ -17,9 +17,9 @@ std::string roundStringFloat(const std::string& str, const int precision) {
 	return str.substr(0, str.rfind('.') + precision + 1);
 }
 
-	float lerp(float a, float b, float f) {
-		return a * (1.0 - f) + (b * f);
-	}
+float lerp(float a, float b, float f) {
+	return a * (1.0 - f) + (b * f);
+}
 
 void drag3(Vec3 &vec, const std::string& label, float speed, float min, float max, float xSize, bool printLabel) {
 	ImGui::SetNextItemWidth(xSize / 3.f);

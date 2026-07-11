@@ -10,12 +10,33 @@
 
 
 Mat4::Mat4() {
-	std::fill(m, m + 16, 0.0f);
+	std::fill_n(m, 16, 0.0f);
 }
 
 Mat4::Mat4(float value) {
-	std::fill(m, m + 16, 0.0f);
-	this->m[0] = this->m[5] = this->m[10] = this->m[15] = value;
+	std::fill_n(m, 16, 0.0f);
+	m[0] = m[5] = m[10] = m[15] = value;
+}
+
+Mat4::Mat4(const float m00, const float m01, const float m02, const float m03, const float m10, const float m11,
+		const float m12, const float m13, const float m20, const float m21, const float m22, const float m23,
+		const float m30, const float m31, const float m32, const float m33) {
+	operator()(0, 0) = m00;
+	operator()(0, 1) = m01;
+	operator()(0, 2) = m02;
+	operator()(0, 3) = m03;
+	operator()(1, 0) = m10;
+	operator()(1, 1) = m11;
+	operator()(1, 2) = m12;
+	operator()(1, 3) = m13;
+	operator()(2, 0) = m20;
+	operator()(2, 1) = m21;
+	operator()(2, 2) = m22;
+	operator()(2, 3) = m23;
+	operator()(3, 0) = m30;
+	operator()(3, 1) = m31;
+	operator()(3, 2) = m32;
+	operator()(3, 3) = m33;
 }
 
 Mat4::Mat4(const Mat4 &other) {
@@ -24,7 +45,7 @@ Mat4::Mat4(const Mat4 &other) {
 
 Mat4 & Mat4::operator=(const Mat4 &other) {
 	if (this != &other) {
-		std::copy(other.m, other.m + 16, m);
+		std::copy_n(other.m, 16, m);
 	}
 	return *this;
 }
@@ -36,12 +57,19 @@ Mat4::~Mat4() {
 /* ==================== OPERATORS ==================== */
 
 
-const float& Mat4::operator()(int col, int row) const {
+const float& Mat4::operator()(const int col, const int row) const {
 	return m[std::clamp(col * 4 + row, 0, 15)];
 }
 
-float& Mat4::operator()(int col, int row) {
+float& Mat4::operator()(const int col, const int row) {
 	return m[std::clamp(col * 4 + row, 0, 15)];
+}
+
+Mat4 Mat4::operator/(const float div) const {
+	Mat4 result;
+	for (int i = 0; i < 16; ++i)
+		result.m[i]  = m[i] / div;
+	return result;
 }
 
 
@@ -105,12 +133,22 @@ Mat4 operator*(const Mat4 &a, const Mat4 &b) {
 				result(col, row) += a(k, row) * b(col, k);
 		}
 	}
-	return (result);
+	return result;
 }
 
+Vec4 operator*(const Mat4 &a, const Vec4 &b) {
+	Vec4 result;
+	result.x = a(0, 0) * b.x + a(1, 0) * b.y + a(2, 0) * b.z + a(3, 0) * b.w;
+	result.y = a(0, 1) * b.x + a(1, 1) * b.y + a(2, 1) * b.z + a(3, 1) * b.w;
+	result.z = a(0, 2) * b.x + a(1, 2) * b.y + a(2, 2) * b.z + a(3, 2) * b.w;
+	result.w = a(0, 3) * b.x + a(1, 3) * b.y + a(2, 3) * b.z + a(3, 3) * b.w;
+	return result;
+}
+
+
 Mat4 perspective(float fovDeg, float aspect, float near, float far) {
-	float fovRad = fovDeg * M_PI / 180.0f;
-	float f = 1.0f / std::tan(fovRad / 2.0f);
+	const float fovRad = fovDeg * M_PI / 180.0f;
+	const float f = 1.0f / std::tan(fovRad / 2.0f);
 
 	Mat4 mat;
 	mat.m[0] = f / aspect;
@@ -140,12 +178,12 @@ Mat4 lookAt(const Vec3 &eye, const Vec3 &center, const Vec3 &up) {
 	mat(3, 0) = -dot(s, eye);
 	mat(3, 1) = -dot(u, eye);
 	mat(3, 2) = dot(f, eye);
-	return (mat);
+	return mat;
 }
 
-Mat4 ortho(float left, float right, float bottom, float top) {
-	const float near = -1.0f;
-	const float far = 1.0f;
+Mat4 ortho(const float left, const float right, const float bottom, const float top) {
+	constexpr float near = -1.0f;
+	constexpr float far = 1.0f;
 
 	Mat4 mat = Mat4::identity();
 
@@ -160,15 +198,15 @@ Mat4 ortho(float left, float right, float bottom, float top) {
 	return mat;
 }
 
-Mat4 rotate(Mat4 &mat, float angleRad, const Vec3 &axis) {
+Mat4 rotate(const Mat4 &mat, const float angleRad, const Vec3 &axis) {
 	return (mat * rotate(angleRad, axis));
 }
 
-Mat4 rotate(float angleRad, const Vec3 &axis) {
-	Vec3 a = normalize(axis);
-	float c = std::cos(angleRad);
-	float s = std::sin(angleRad);
-	float oneMinusC = 1.0f - c;
+Mat4 rotate(const float angleRad, const Vec3 &axis) {
+	const Vec3 a = normalize(axis);
+	const float c = std::cos(angleRad);
+	const float s = std::sin(angleRad);
+	const float oneMinusC = 1.0f - c;
 
 	Mat4 mat = Mat4::identity();
 	mat(0, 0) = c + a.x * a.x * oneMinusC;
@@ -183,7 +221,7 @@ Mat4 rotate(float angleRad, const Vec3 &axis) {
 	mat(2, 1) = a.z * a.y * oneMinusC - a.x * s;
 	mat(2, 2) = c + a.z * a.z * oneMinusC;
 
-	return (mat);
+	return mat;
 }
 
 
@@ -191,7 +229,7 @@ Mat4 translate(const Vec3 &t) {
 	Mat4 mat = Mat4::identity();
 	// Result[3] = m[0] * v[0] + m[1] * v[1] + m[2] * v[2] + m[3];
 	mat.setCol(3, mat.getCol	(0) * t.x + mat.getCol(1) * t.y + mat.getCol(2) * t.z + mat.getCol(3));
-	return (mat);
+	return mat;
 }
 
 Mat4 translate(const Mat4 &mat, const Vec3 &v) {
@@ -201,9 +239,9 @@ Mat4 translate(const Mat4 &mat, const Vec3 &v) {
 
 	result.setCol(3, translation);
 
-	return (result);
+	return result;
 }
 
-float radians(float degrees) {
+float radians(const float degrees) {
 	return degrees * (M_PI / 180);
 }

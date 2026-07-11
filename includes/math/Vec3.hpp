@@ -29,6 +29,7 @@ public:
 	Vec3	operator*(float scalar)			const ;
 	Vec3	operator/(const Vec3& op)		const ;
 	float&	operator[](int place);
+	bool	operator==(const Vec3 &other)	const;
 
 	float	dot(const Vec3& other)			const ;
 	float	length()						const ;
@@ -41,9 +42,14 @@ Vec3	operator*(float scalar, const Vec3 &vec);
 
 float	angle(const Vec3& a, const Vec3& b);
 float	dot(const Vec3& a, const Vec3& b);
+float	length(const Vec3& a);
+float	length2(const Vec3& a);
 Vec3	rotate(const Vec3& v, float angle, const Vec3 &b);
 Vec3	cross(const Vec3& a, const Vec3& b);
 Vec3	normalize(const Vec3& v);
+Vec3	lerp(const Vec3& a, const Vec3& b, float t);
+float	distance(const Vec3& a, const Vec3& b);
+float	distance2(const Vec3& a, const Vec3& b);
 
 std::ostream& operator<<(std::ostream& os, const Vec3& v);
 
