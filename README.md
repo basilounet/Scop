@@ -23,6 +23,7 @@ Then run the program with the following command:
 - [GLM](https://github.com/g-truc/glm) (as a reference for matrix and vector operations)
 - [Wavefront OBJ file format](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
 - [Wavefront source 2](https://fr.wikipedia.org/wiki/Objet_3D_(format_de_fichier))
+- [Material Template Library (MTL) file format](https://fr.wikipedia.org/wiki/Material_Template_Library)
 - [Video tutorials](https://www.youtube.com/watch?v=z03LXhRBLGI&list=PLPaoO-vpZnumdcb4tZc4x5Q-v7CkrQ6M-&index=2)
 - [ImGui widget list](https://pthom.github.io/imgui_explorer/)
 ---
@@ -34,6 +35,8 @@ Then run the program with the following command:
 - Real time Textures, Materials and Object loading AND changes
 - Meshes outlines with shaders
 - SkyBox
+- Lighting
+- Static Texture mapping
 - Object animations
 - Multiples objects and meshing each having their own pos, orientation, outline, scale, shader, animations, etc. They also can be tweaked in real time and individually with ImGui.
 - Splines

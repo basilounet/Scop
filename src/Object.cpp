@@ -261,7 +261,7 @@ void Object::parseVertex(const std::vector<std::string>& tokens, const size_t li
 	}
 
 	if (_vCount < _vertices.size())
-		_vertices[_vCount].position = vec;
+		_vertices[_vCount].pos = vec;
 	else
 		_vertices.push_back(Vertex{Vec3(vec), Vec3(0.0f, 0.0f, 0.0f),
 			Vec3(0.5f, 0.20f, 0.9f), Vec2(1000000, -1000000)});

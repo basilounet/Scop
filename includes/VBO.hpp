@@ -12,7 +12,7 @@
 # include "math/Vec3.hpp"
 
 struct Vertex {
-	Vec3 position;
+	Vec3 pos;
 	Vec3 normal;
 	Vec3 color;
 	Vec2 texCoord;

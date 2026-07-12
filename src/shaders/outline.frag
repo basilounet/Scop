@@ -4,7 +4,7 @@ out vec4 FragColor;
 
 uniform float iTime;
 uniform vec3 iResolution;
-uniform float useOutlinePercentage; // 0 <= v <= 1
+uniform float outlinePercentage; // 0 <= v <= 1
 
 out vec2 v_texcoord;
 
@@ -155,10 +155,10 @@ void mainImage1(out vec4 o,in vec2 U){
 void main()
 {
     vec4 color1 = vec4(0.0), color2 = vec4(0.0);
-    if (useOutlinePercentage != 0.0)
+    if (outlinePercentage != 0.0)
         mainImage1(color2, gl_FragCoord.xy);
-    if (useOutlinePercentage != 1.0)
+    if (outlinePercentage != 1.0)
         mainImage2(color1, gl_FragCoord.xy);
-    FragColor = mix(color1, color2, useOutlinePercentage);
+    FragColor = mix(color1, color2, outlinePercentage);
 //    FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

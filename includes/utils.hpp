@@ -18,10 +18,11 @@
 # define MENU				0b1
 # define USE_TEX			0b10
 # define USE_COLORS			0b100
-# define USE_OUTLINE_PER	0b1000
+# define OUTLINE_PER		0b1000
 # define HIDE_MESH			0b10000
 # define HIDE_OUTLINE		0b100000
-# define LOCK_MOUSE			0b1000000
+# define USE_STATIC_TEX		0b1000000
+# define LOCK_MOUSE			0b10000000
 
 float		roundFloat(const float value, const int precision);
 std::string	roundStringFloat(const std::string& str, const int precision);

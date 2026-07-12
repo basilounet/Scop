@@ -36,7 +36,7 @@ struct MaterialData {
 	Vec3		_ke;
 	float		_ni;
 	float		_d;
-	std::string	_mapKd = "jiji2.png";
+	std::string	_mapKd = "jiji.png";
 	Texture		_mapKdTexture;
 };
 

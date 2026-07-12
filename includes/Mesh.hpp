@@ -5,9 +5,10 @@
 #ifndef SCOP_MESH_HPP
 # define SCOP_MESH_HPP
 
-#include <vector>
+# include <vector>
+# include <functional>
 
-#include "Camera.hpp"
+# include "Camera.hpp"
 # include "VAO.hpp"
 # include "VBO.hpp"
 # include "EBO.hpp"
@@ -46,17 +47,19 @@ public:
 	void	updateStates(const double& deltaTime);
 	void	draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type = "mesh", bool forceOutline = false);
 
+	void	createFinalVertices();
 	void	calculateCenter();
 	void	assignTexCoords();
 	void	calculateNormals();
 
 	void	imGuiMeshInfos();
 
-	void	destroy();
+	void	destroy() const;
 
 
 private:
-	std::vector<Vertex>		_vertices;
+	std::vector<Vertex>		_rawVertices;
+	std::vector<Vertex>		_finalVertices;
 	faceGroupMap			_indicesGroups;
 	Vec3					_pos;
 	Vec3					_centerPoint;
@@ -64,15 +67,19 @@ private:
 	int						_flags;
 	float					_useTexPercentage;
 	float					_useColorPercentage;
-	float					_useOutlinePercentage;
+	float					_outlinePercentage;
+	float					_useStaticTex;
 	float					_outlineSize;
 
 	std::string				_name;
 	size_t					_totalIndicesCount;
 
-	VAO						_vao;
-	VBO						_vbo;
-	EBO						_ebo;
+	VAO						_vaoRaw;
+	VBO						_vboRaw;
+	EBO						_eboRaw;
+
+	VAO						_vaoFinal;
+	VBO						_vboFinal;
 };
 
 

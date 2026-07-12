@@ -11,11 +11,12 @@ Mesh::Mesh() {
 }
 
 Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
-		_vertices(vertices),
+		_rawVertices(vertices),
 		_indicesGroups(indicesGroup),
 		_outlineSize(.2f),
 		_name(name),
 		_totalIndicesCount(0) {
+	createFinalVertices();
 	calculateNormals();
 	assignTexCoords();
 	calculateCenter();
@@ -25,8 +26,8 @@ Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const f
 
 	_useColorPercentage = 1.0f;
 	_useTexPercentage = 1.0f;
-	_useOutlinePercentage = 1.0f;
-	_flags = USE_COLORS | USE_TEX | HIDE_OUTLINE | USE_OUTLINE_PER;
+	_outlinePercentage = 1.0f;
+	_flags = USE_COLORS | USE_TEX | HIDE_OUTLINE | OUTLINE_PER;
 }
 
 Mesh::Mesh(const Object& object) {
@@ -39,20 +40,24 @@ Mesh::Mesh(const Mesh& other) {
 
 Mesh & Mesh::operator=(const Mesh &other) {
 	if (this != &other) {
-		_vertices = other._vertices;
+		_rawVertices = other._rawVertices;
+		_finalVertices = other._finalVertices;
 		_indicesGroups = other._indicesGroups;
 		_pos = other._pos;
 		_flags = other._flags;
 		_centerPoint = other._centerPoint;
 		_useTexPercentage = other._useTexPercentage;
 		_useColorPercentage = other._useColorPercentage;
-		_useOutlinePercentage = other._useOutlinePercentage;
+		_outlinePercentage = other._outlinePercentage;
+		_useStaticTex = other._useStaticTex;
 		_outlineSize = other._outlineSize;
 		_name = other._name;
 		_totalIndicesCount = other._totalIndicesCount;
-		_vao = other._vao;
-		_vbo = other._vbo;
-		_ebo = other._ebo;
+		_vaoRaw = other._vaoRaw;
+		_vboRaw = other._vboRaw;
+		_eboRaw = other._eboRaw;
+		_vaoFinal = other._vaoFinal;
+		_vboFinal = other._vboFinal;
 	}
 	return *this;
 }
@@ -65,7 +70,7 @@ const std::string & Mesh::getName() const {
 }
 
 const std::vector<Vertex> & Mesh::getVertices() const {
-	return _vertices;
+	return _rawVertices;
 }
 
 const faceGroupMap & Mesh::getIndicesGroup() const {
@@ -89,7 +94,7 @@ const Vec3 & Mesh::getCenterPoint() const {
 }
 
 void Mesh::setVertices(const std::vector<Vertex> &vertices) {
-	_vertices = vertices;
+	_rawVertices = vertices;
 }
 
 void Mesh::setIndices(const faceGroupMap &indices) {
@@ -119,25 +124,34 @@ void Mesh::addFlags(const int flag) {
 
 
 void Mesh::createMesh() {
-	_vao = VAO(true);
-	_vao.bind();
+	_vaoRaw = VAO(true);
+	_vaoRaw.bind();
+	_vboRaw = VBO(_rawVertices);
+	_eboRaw = EBO(_indicesGroups);
+	_vaoRaw.linkAttrib(_vboRaw, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0); // Position
+	_vaoRaw.linkAttrib(_vboRaw, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(GLfloat))); // normal
+	_vaoRaw.linkAttrib(_vboRaw, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(GLfloat))); // Color
+	_vaoRaw.linkAttrib(_vboRaw, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(GLfloat))); // TexCoord
+	_vaoRaw.unbind();
+	_vboRaw.unbind();
+	_eboRaw.unbind();
 
-	_vbo = VBO(_vertices);
-	_ebo = EBO(_indicesGroups);
+	_vaoFinal = VAO(true);
+	_vaoFinal.bind();
+	_vboFinal = VBO(_finalVertices);
 
-	_vao.linkAttrib(_vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0); // Position
-	_vao.linkAttrib(_vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(GLfloat))); // normal
-	_vao.linkAttrib(_vbo, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(GLfloat))); // Color
-	_vao.linkAttrib(_vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(GLfloat))); // TexCoord
-	_vao.unbind();
-	_vbo.unbind();
-	_ebo.unbind();
+	_vaoFinal.linkAttrib(_vboFinal, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0); // Position
+	_vaoFinal.linkAttrib(_vboFinal, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(GLfloat))); // normal
+	_vaoFinal.linkAttrib(_vboFinal, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(GLfloat))); // Color
+	_vaoFinal.linkAttrib(_vboFinal, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(GLfloat))); // TexCoord
+	_vaoFinal.unbind();
+	_vboFinal.unbind();
 }
 
 void Mesh::updateStates(const double &deltaTime) {
 	_useTexPercentage = std::clamp(_useTexPercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
-	_useOutlinePercentage = std::clamp(_useOutlinePercentage + (_flags & USE_OUTLINE_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
+	_outlinePercentage = std::clamp(_outlinePercentage + (_flags & OUTLINE_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 }
 
 void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type, const bool forceOutline) {
@@ -146,7 +160,10 @@ void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, c
 		return;
 	shader.activate();
 
-	_vao.bind();
+	if (type == "outline")
+		_vaoRaw.bind();
+	else
+		_vaoFinal.bind();
 
 	size_t offset = 0;
 	Texture *texture = nullptr;
@@ -159,82 +176,98 @@ void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, c
 	glUniform3f(glGetUniformLocation(shader.getID(), "iResolution"), (float)camera.getWidth(), (float)camera.getHeight(), 0.f);
 	glUniform1f(glGetUniformLocation(shader.getID(), "useTexturePercentage"), _useTexPercentage);
 	glUniform1f(glGetUniformLocation(shader.getID(), "useColorPercentage"), _useColorPercentage);
-	glUniform1f(glGetUniformLocation(shader.getID(), "useOutlinePercentage"), _useOutlinePercentage);
+	glUniform1f(glGetUniformLocation(shader.getID(), "outlinePercentage"), _outlinePercentage);
+	glUniform1i(glGetUniformLocation(shader.getID(), "staticTex"), (_flags & USE_STATIC_TEX) ? 1 : 0);
 	glUniform1f(glGetUniformLocation(shader.getID(), "outlining"), _outlineSize);
 
 	for (auto&[fst, snd] : _indicesGroups) {
 		texture = &snd._material->_mapKdTexture;
 		texture->texUnit(shader, texture->getType() + std::to_string(i), i);
 		texture->bind();
-		glDrawElements(GL_TRIANGLES, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
-		// glDrawElements(GL_LINE, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
+		if (type == "outline")
+			glDrawElements(GL_TRIANGLES, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
+		else
+			glDrawArrays(GL_TRIANGLES, offset, snd._indices.size());
 		offset += snd._indices.size();
-		// PRINT "loop: " << i CENDL;
 		++i;
 		texture->unbind();
 	}
-	_vao.unbind();
+	_vaoRaw.unbind();
+}
+
+void Mesh::createFinalVertices() {
+	_finalVertices.clear();
+	for (auto &[str, faceGroup] : _indicesGroups) {
+		for (auto &index : faceGroup._indices) {
+			_finalVertices.push_back(_rawVertices[index]);
+		}
+	}
 }
 
 void Mesh::calculateCenter() {
 	Vec3 max = Vec3(
-		std::max_element(_vertices.begin(), _vertices.end(),
+		std::max_element(_rawVertices.begin(), _rawVertices.end(),
 			[](const Vertex &a, const Vertex &b) {
-			return a.position.x < b.position.x;})->position.x,
-		std::max_element(_vertices.begin(), _vertices.end(),
+			return a.pos.x < b.pos.x;})->pos.x,
+		std::max_element(_rawVertices.begin(), _rawVertices.end(),
 			[](const Vertex &a, const Vertex &b) {
-			return a.position.y < b.position.y; })->position.y,
-		std::max_element(_vertices.begin(), _vertices.end(),
+			return a.pos.y < b.pos.y; })->pos.y,
+		std::max_element(_rawVertices.begin(), _rawVertices.end(),
 			[](const Vertex &a, const Vertex &b) {
-			return a.position.z < b.position.z;	})->position.z);
+			return a.pos.z < b.pos.z;	})->pos.z);
 	Vec3 min = Vec3(
-	std::min_element(_vertices.begin(), _vertices.end(),
+	std::min_element(_rawVertices.begin(), _rawVertices.end(),
 		[](const Vertex &a, const Vertex &b) {
-		return a.position.x < b.position.x;})->position.x,
-	std::min_element(_vertices.begin(), _vertices.end(),
+		return a.pos.x < b.pos.x;})->pos.x,
+	std::min_element(_rawVertices.begin(), _rawVertices.end(),
 		[](const Vertex &a, const Vertex &b) {
-		return a.position.y < b.position.y; })->position.y,
-	std::min_element(_vertices.begin(), _vertices.end(),
+		return a.pos.y < b.pos.y; })->pos.y,
+	std::min_element(_rawVertices.begin(), _rawVertices.end(),
 		[](const Vertex &a, const Vertex &b) {
-		return a.position.z < b.position.z;	})->position.z);
+		return a.pos.z < b.pos.z;	})->pos.z);
 	_centerPoint = (min + max) / 2.0f;
 }
 
 void Mesh::assignTexCoords() {
-	for (Vertex & v : _vertices) {
-		v.texCoord = Vec2(v.position.z, v.position.y);
-	}
+	std::function <void(Vertex&)> assignTexCoord = [](Vertex& v) {
+		const Vec3 absN = v.normal.abs();
+		int biggestIndex = absN.x > absN.y ? (absN.x > absN.z ? 0 : 2) : (absN.y > absN.z ? 1 : 2);
+		if (biggestIndex == 0) // x
+			v.texCoord = Vec2(v.pos.z, v.pos.y);
+		else if (biggestIndex == 1) // y
+			v.texCoord = Vec2(v.pos.x, v.pos.z);
+		else if (biggestIndex == 2) // z
+			v.texCoord = Vec2(v.pos.x, v.pos.y);
+	};
+	for (Vertex& v : _rawVertices)
+		assignTexCoord(v);
+	for (Vertex& v : _finalVertices)
+		assignTexCoord(v);
 }
 
 void Mesh::calculateNormals() {
+	for (size_t i = 0; i < _finalVertices.size(); i += 3) {
+		Vec3 v0 = _finalVertices[i].pos;
+		Vec3 v1 = _finalVertices[i + 1].pos;
+		Vec3 v2 = _finalVertices[i + 2].pos;
+		const Vec3 normal = normalize(cross(v1 - v0, v2 - v0));
+		_finalVertices[i].normal = _finalVertices[i].color = normal;
+		_finalVertices[i + 1].normal = _finalVertices[i + 1].color = normal;
+		_finalVertices[i + 2].normal = _finalVertices[i + 2].color = normal;
+	}
+
 	std::vector<GLuint> indicesBuffer;
-
-	for (auto &group : _indicesGroups) {
+	for (auto &group : _indicesGroups)
 		indicesBuffer.insert(indicesBuffer.end(), group.second._indices.begin(), group.second._indices.end());
-	}
-	// for (auto & vertice : _vertices) {
-	// vertice.normal = Vec3(0, 0, 0);
-	// }
 	for (size_t i = 0; i < indicesBuffer.size() - 2; i += 3) {
-		Vec3 p = cross(
-			_vertices[indicesBuffer[i + 1]].position - _vertices[indicesBuffer[i]].position,
-			_vertices[indicesBuffer[i + 2]].position - _vertices[indicesBuffer[i]].position);
-		// std::cout << "Face" YLW" [" <<indicesBuffer[i]<<", "<<indicesBuffer[i + 1]<<", "<<indicesBuffer[i + 2]<<
-		// "]" RESET " product: " << p.x << ", " << p.y << ", " << p.z << std::endl;
-		_vertices[indicesBuffer[i]].normal += p;
-		_vertices[indicesBuffer[i + 1]].normal += p;
-		_vertices[indicesBuffer[i + 2]].normal += p;
-
+		const Vec3 p = cross(
+			_rawVertices[indicesBuffer[i + 1]].pos - _rawVertices[indicesBuffer[i]].pos,
+			_rawVertices[indicesBuffer[i + 2]].pos - _rawVertices[indicesBuffer[i]].pos);
+		for (short j = 0; j < 3; ++j)
+			_rawVertices[indicesBuffer[i + j]].normal += p; // xyz
 	}
-	for (size_t i = 0; i < _vertices.size(); ++i) {
-		// if (_vertices[i].normal.x == 0 && _vertices[i].normal.y == 0 && _vertices[i].normal.z == 0)
-		// _vertices[i].normal = Vec3(0.0f, 0.0f, 1.0f);
-		_vertices[i].normal = normalize(_vertices[i].normal);
-		// _vertices[i].normal = normalize(_vertices[i].normal).abs();
-		_vertices[i].color = _vertices[i].normal;
-		// std::cout << "Vertex " YLW"["<<i<<"]" RESET" normal: "
-		// << _vertices[i].normal.x << ", " << _vertices[i].normal.y << ", " << _vertices[i].normal.z << std::endl;
-	}
+	for (size_t i = 0; i < _rawVertices.size(); ++i)
+		_rawVertices[i].normal = _rawVertices[i].color = normalize(_rawVertices[i].normal);
 }
 
 void Mesh::imGuiMeshInfos() {
@@ -253,26 +286,23 @@ void Mesh::imGuiMeshInfos() {
 	ImGui::Text("%.0f%%", _useColorPercentage * 100);
 	ImGui::SameLine();
 	if (ImGui::Button("Flip Outline (T)"))
-		_flags ^= USE_OUTLINE_PER;
+		_flags ^= OUTLINE_PER;
 	if (ImGui::Button("Hide mesh (G)"))
 		_flags ^= HIDE_MESH;
-	ImGui::SameLine();
-	ImGui::Text("%s", (_flags & HIDE_MESH) != 0 ? "true" : "false");
 	ImGui::SameLine();
 	if (ImGui::Button("Hide Outline (H)"))
 		_flags ^= HIDE_OUTLINE;
 	ImGui::SameLine();
-	ImGui::Text("%s", (_flags & HIDE_OUTLINE) != 0 ? "true" : "false");
-
-
+	if (ImGui::Button("Use Static Tex (X)"))
+		_flags ^= USE_STATIC_TEX;
 }
 
-void Mesh::destroy() {
-	_vao.deleteVAO();
-	_vbo.deleteVBO();
-	_ebo.deleteEBO();
+void Mesh::destroy() const {
+	_vaoRaw.deleteVAO();
+	_vboRaw.deleteVBO();
+	_eboRaw.deleteEBO();
 
-	// for (auto&[fst, snd] : _indicesGroup)
-		// snd._material->_mapKdTexture.deleteTexture();
+	_vaoFinal.deleteVAO();
+	_vboFinal.deleteVBO();
 }
 

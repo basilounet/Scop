@@ -7,8 +7,8 @@
 
 # include <array>
 
+# include "Texture.hpp"
 # include "Camera.hpp"
-# include "EBO.hpp"
 # include "VAO.hpp"
 
 

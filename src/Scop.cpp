@@ -161,11 +161,13 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_COLORS);
 	if (key == GLFW_KEY_T && action == GLFW_PRESS)
-		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_OUTLINE_PER);
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(OUTLINE_PER);
 	if (key == GLFW_KEY_G && action == GLFW_PRESS)
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(HIDE_MESH);
 	if (key == GLFW_KEY_H && action == GLFW_PRESS)
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(HIDE_OUTLINE);
+	if (key == GLFW_KEY_X && action == GLFW_PRESS)
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_STATIC_TEX);
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 		scop->_currentEditMeshID = ++scop->_currentEditMeshID % scop->_meshes.size();
 }
@@ -187,7 +189,7 @@ void Scop::draw() {
 	_camera.sendUniforms(_shaderProgram);
 
 	static float oscil = 0.0f; // TODO : remove
-	oscil += _deltaTime * 3.f;
+	oscil += _deltaTime * 1.f;
 	_rotation += _deltaTime * 10.0f;
 	// double xPos, yPos;
 	// glfwGetCursorPos(_window, &xPos, &yPos);
@@ -196,7 +198,7 @@ void Scop::draw() {
 	for (size_t i = 0; i < _meshes.size(); ++i) {
 		Mat4 model = Mat4(1.0f);
 		model = rotate(model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
-		// model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
+		model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
 		model = translate(model, -_meshes[i].getCenterPoint());
 		// _meshes[i].addPos(cos(oscil));
 
@@ -556,6 +558,7 @@ void Scop::meshesDisplay() {
 		ImGui::DragInt("current Edit Mesh ID", &_currentEditMeshID, 1, 0, _meshes.size() - 1);
 		_meshes[_currentEditMeshID].imGuiMeshInfos();
 		if (ImGui::Button("Delete Mesh")) {
+			_meshes[_currentEditMeshID].destroy();
 			_meshes.erase(_meshes.begin() + _currentEditMeshID);
 			_currentEditMeshID = _currentEditMeshID % (_meshes.empty() ? 1 : _meshes.size());
 		}
