@@ -107,7 +107,7 @@ endif
 
 ##========== COMPILATION ==========##
 
-all: glfw glad imgui $(NAME)
+all: $(NAME)
 
 glfw:
 	@if [ ! -d "$(GLFW)" ]; then \

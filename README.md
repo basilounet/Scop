@@ -10,6 +10,7 @@ The program will be able to display the object in a window and allow the user to
 ## Instrucions
 Run the following command to compile the project:
 ```
+make glfw glad imgui
 make
 ```
 Then run the program with the following command:

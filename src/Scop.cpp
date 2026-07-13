@@ -47,7 +47,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 2.0f), &_flags);
+	_camera = Camera(_width, _height, Vec3(0.0f, 0.5f, 5.0f), &_flags);
 	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL + ((_flags & LOCK_MOUSE) == 0));
 	glfwSetCursorPos(_window, (double)_width / 2, (double)_height / 2);
 	glfwSetFramebufferSizeCallback(_window, framebufferResize);
