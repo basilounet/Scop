@@ -17,7 +17,7 @@
 class Texture {
 public:
 	Texture();
-	Texture(const std::string &path, const std::string& texType, const GLuint slot, const GLenum pixelType);
+	Texture(const std::string &path, const std::string& texType, GLuint slot, GLenum pixelType);
 	Texture(const Texture& other);
 	~Texture();
 

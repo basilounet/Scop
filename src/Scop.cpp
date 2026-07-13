@@ -30,6 +30,7 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 
 	Object::loadTextures();
+	Mesh::_outlineTex = Texture("./resources/textures/stars.png", "texture", 0, GL_UNSIGNED_BYTE);
 
 	for (auto& obj: _objects)
 		_meshes.emplace_back(obj.second);
@@ -187,36 +188,26 @@ void Scop::draw() {
 	_camera.inputs(_window, _deltaTime);
 	_camera.updateMatrix(0.1f, 1000.0f);
 
-	static float oscil = 0.0f; // TODO : remove
-	oscil += _deltaTime * .8f;
-	_rotation += _deltaTime * 8.0f;
-	// double xPos, yPos;
-	// glfwGetCursorPos(_window, &xPos, &yPos);
-	// Vec2 mousePos = Vec2((float)xPos, (float)yPos);
+	double xPos, yPos;
+	glfwGetCursorPos(_window, &xPos, &yPos);
 
 	for (size_t i = 0; i < _meshes.size(); ++i) {
-		Mat4 model = Mat4(1.0f);
-		model = rotate(model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
-		model = rotate(model, radians(_rotation), Vec3(cos(oscil + .5f), sin(oscil), cos(oscil)));
-		model = translate(model, -_meshes[i].getCenterPoint());
-		// _meshes[i].addPos(cos(oscil));
-
-		_meshes[i].splinePreview(_camera, _deltaTime);
 		_meshes[i].updateStates(_deltaTime);
+		_meshes[i].splinePreview(_camera, _deltaTime);
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilMask(0xFF);
-		_meshes[i].draw(_shaderProgram, _camera, model, "mesh");
+
+		_meshes[i].draw(_shaderProgram, _camera, "mesh");
 
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 		glStencilMask(0x00);
 
 		_outlineShader.activate();
-		_meshes[i].draw(_outlineShader, _camera, model, "outline", (int)i == _currentEditMeshID);
+		glUniform2f(glGetUniformLocation(_outlineShader.getID(), "iMouse"), xPos, yPos);
+		_meshes[i].draw(_outlineShader, _camera, "outline", (int)i == _currentEditMeshID);
 
 		glStencilMask(0xFF);
 		glStencilFunc(GL_ALWAYS, 0, 0xFF);
-
-		// _meshes[i].addPos(-cos(oscil));
 	}
 	_skybox.drawSkybox(_camera);
 }
@@ -551,11 +542,10 @@ void Scop::objectDisplay() {
 }
 
 void Scop::meshesDisplay() {
+	if (_meshes.empty())
+		return ;
 	if (ImGui::Begin("Meshes", (bool *)__null)) {
-		if (_meshes.empty()) {
-			ImGui::End();
-			return ;
-		}
+
 		ImGui::DragInt("current Edit Mesh ID", &_currentEditMeshID, 1, 0, _meshes.size() - 1);
 		_meshes[_currentEditMeshID].imGuiMeshInfos();
 		if (ImGui::Button("Delete Mesh")) {

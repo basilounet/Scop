@@ -4,6 +4,9 @@
 
 #include "Mesh.hpp"
 
+#include <cmath>
+
+Texture Mesh::_outlineTex = Texture();
 
 /* ==================== CONSTRUCTORS ==================== */
 
@@ -13,9 +16,13 @@ Mesh::Mesh() {
 Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
 		_rawVertices(vertices),
 		_indicesGroups(indicesGroup),
+		_rotation(0.f),
+		_oscillation(0.f),
 		_outlineSize(.2f),
 		_name(name),
-		_splineSpeed(.5f) {
+		_u(.5f),
+		_splineSpeed(.5f)
+	{
 	createFinalVertices();
 	calculateNormals();
 	assignTexCoords();
@@ -27,6 +34,7 @@ Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const f
 	_spline = Spline(Spline::LINEAR, {});
 	// _spline = Spline(Spline::BEZIER, {Vec3(0, 0, 0), Vec3(5, 12, 0), Vec3(5, 12, 12), Vec3(0, 0, 12),
 	// 	Vec3(-5, -12, 12), Vec3(-5, -12, 0), Vec3(0, 0, 0)});
+	_model = Mat4(1.f);
 	_useColorPercentage = 1.0f;
 	_useTexPercentage = 1.0f;
 	_outlinePercentage = 1.0f;
@@ -49,6 +57,9 @@ Mesh & Mesh::operator=(const Mesh &other) {
 		_pos = other._pos;
 		_flags = other._flags;
 		_centerPoint = other._centerPoint;
+		_model = other._model;
+		_rotation = other._rotation;
+		_oscillation = other._oscillation;
 		_useTexPercentage = other._useTexPercentage;
 		_useColorPercentage = other._useColorPercentage;
 		_outlinePercentage = other._outlinePercentage;
@@ -109,13 +120,21 @@ void Mesh::createMesh() {
 	_vboFinal.unbind();
 }
 
-void Mesh::updateStates(const double &deltaTime) {
+void Mesh::updateStates(const double deltaTime) {
+	_model = Mat4(1.f);
+	_oscillation += deltaTime * .8f;
+	_rotation += deltaTime * 8.0f;
+	_model = rotate(_model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
+	_model = rotate(_model, radians(_rotation),
+					Vec3(std::cos(_oscillation + .5f), std::sin(_oscillation), std::cos(_oscillation)));
+	_model = translate(_model, -_centerPoint);
+
 	_useTexPercentage = std::clamp(_useTexPercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 	_outlinePercentage = std::clamp(_outlinePercentage + (_flags & OUTLINE_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 }
 
-void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type, const bool forceOutline) {
+void Mesh::draw(const Shader &shader, const Camera &camera, const std::string& type, const bool forceOutline) {
 	if ((type == "mesh" && (_flags & HIDE_MESH)) ||
 		(type == "outline" && !forceOutline && (_flags & HIDE_OUTLINE)))
 		return;
@@ -132,7 +151,7 @@ void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, c
 
 	camera.sendUniforms(shader);
 	glUniform3f(glGetUniformLocation(shader.getID(), "translation"), _pos.x, _pos.y, _pos.z);
-	glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model"), 1, GL_FALSE, model.m);
+	glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model"), 1, GL_FALSE, _model.m);
 	glUniform1f(glGetUniformLocation(shader.getID(), "iTime"), glfwGetTime());
 	glUniform3f(glGetUniformLocation(shader.getID(), "iResolution"), (float)camera.getWidth(), (float)camera.getHeight(), 0.f);
 	glUniform1f(glGetUniformLocation(shader.getID(), "useTexturePercentage"), _useTexPercentage);
@@ -145,8 +164,13 @@ void Mesh::draw(const Shader &shader, const Camera &camera, const Mat4& model, c
 		texture = &snd._material->_mapKdTexture;
 		texture->texUnit(shader, texture->getType() + std::to_string(i), i);
 		texture->bind();
-		if (type == "outline")
+		if (type == "outline") {
+			texture->unbind();
+			_outlineTex.texUnit(shader, texture->getType() + std::to_string(i), i);
+			_outlineTex.bind();
 			glDrawElements(GL_TRIANGLES, snd._indices.size(), GL_UNSIGNED_INT, (void*)(offset * sizeof(GLuint)));
+			_outlineTex.unbind();
+		}
 		else
 			glDrawArrays(GL_TRIANGLES, offset, snd._indices.size());
 		offset += snd._indices.size();
@@ -317,7 +341,7 @@ void Mesh::imGuiSpline(const Camera& camera) {
 			ImGui::SameLine();
 			if(ImGui::Button("Loop", ImVec2(ImGui::GetContentRegionAvail().x * .4f, 0.f)))
 				_flags ^= LOOP_SPLINE;
-			// ImGui::ProgressBar(std::clamp(CameraManager::getU() / (double)spline->_nbCurves, 0.0, 1.0), ImVec2(0.0f, 0.0f)); // todo
+			ImGui::ProgressBar(std::clamp(_u / (double)spline->_nbCurves, 0.0, 1.0), ImVec2(0.0f, 0.0f));
 
 			drag3(spline->_origin, "Origin", .4f, -FLT_MAX, +FLT_MAX, ImGui::GetContentRegionAvail().x * .6f, true,
 				[](std::any& s){std::any_cast<Spline&>(s).compile();}, _spline);
@@ -341,7 +365,6 @@ void Mesh::imGuiSpline(const Camera& camera) {
 				errorStr = "";
 			}
 			static Vec3 newPos;
-			// ImGui::InputFloat3("add Pos", &newPos[0], "%.2f");
 			drag3(newPos, "pos", .4f, -FLT_MAX, +FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
 
 			if (ImGui::Button("Add Vertex")) {
@@ -366,43 +389,12 @@ void Mesh::imGuiSpline(const Camera& camera) {
 			for (unsigned int i = 0 ; i < spline->_nbCurves; ++i) {
 				ImGui::PushID(i);
 				if (ImGui::TreeNode("", "Curve %u", i)) {
-					ImGui::SameLine();
-					if (ImGui::Button("X")) {
-						spline->_vertices.erase(
-							spline->_vertices.begin() + i * spline->_offset,
-							spline->_vertices.begin() + i * spline->_offset + spline->_pointsPerCurve);
-						ImGui::TreePop();
-						ImGui::PopID();
-						spline->compile();
-						errorStr = "";
-						--i;
-						continue;
-					}
-					// for (unsigned int j = 0; j < (spline->_type == Spline::BSPLINE ? (i <= 0 ? 4 : 2) : spline->_pointsPerCurve) && i + j < spline->_vertices.size(); ++j) {
 					for (unsigned int j = 0; j < spline->_pointsPerCurve && i + j < spline->_vertices.size(); ++j) {
 						ImGui::PushID(j);
 						if (ImGui::TreeNode("", "Point %d", j)) {
 							drag3(spline->_vertices[i * spline->_offset + j], "pos", .4f, -FLT_MAX, +FLT_MAX,
 								ImGui::GetContentRegionAvail().x * .6f, true,
 								[](std::any& s){std::any_cast<Spline&>(s).computePreview();}, _spline);
-							// ! if (ImGui::DragFloat3("pos", &spline->_vertices[i * spline->_offset + j][0], .4f,
-							// ! 	-FLT_MAX, +FLT_MAX, "%.2f"))
-							// ! 	 spline->computePreview();
-							// ImGui::InputFloat3("pos", &spline->_vertices[i * spline->_offset + j][0], "%.2f");
-							ImGui::SameLine();
-							if (ImGui::Button("X")) {
-								spline->_vertices.erase(spline->_vertices.begin() + i * spline->_offset + j);
-								ImGui::TreePop();
-								ImGui::PopID();
-								if (spline->overflowAmount() != 0) {
-									ImGui::TreePop();
-									ImGui::PopID();
-								}
-								spline->compile();
-								errorStr = "";
-								--j;
-								continue;
-							}
 							ImGui::TreePop();
 						}
 						ImGui::PopID();
@@ -416,17 +408,6 @@ void Mesh::imGuiSpline(const Camera& camera) {
 			while (spline->overflowAmount() != 0 && !spline->_vertices.empty()) {
 				ImGui::PushID(-1);
 				if (ImGui::TreeNode("", "No Curve")) {
-					ImGui::SameLine();
-					if (ImGui::Button("X")) {
-						spline->_vertices.erase(
-							spline->_vertices.begin() + spline->_nbCurves * spline->_offset,
-							spline->_vertices.end());
-						ImGui::TreePop();
-						ImGui::PopID();
-						spline->compile();
-						errorStr = "";
-						break;
-					}
 					short overflow = spline->overflowAmount();
 					for (short j = 0; j < overflow + (short)((spline->_nbCurves != 0) * (spline->_pointsPerCurve - spline->_offset)); ++j) {
 						ImGui::PushID(j);
@@ -434,23 +415,6 @@ void Mesh::imGuiSpline(const Camera& camera) {
 							drag3(spline->_vertices[spline->_nbCurves * spline->_offset + j], "pos", .4f, -FLT_MAX, +FLT_MAX,
 								ImGui::GetContentRegionAvail().x * .6f, true,
 								[](std::any& s){std::any_cast<Spline&>(s).computePreview();}, _spline);
-							// ! if (ImGui::DragFloat3("pos", &spline->_vertices[spline->_nbCurves * spline->_offset + j][0], .4f,
-							// ! 	-FLT_MAX, +FLT_MAX, "%.2f"))
-							// ! 	spline->computePreview();
-							ImGui::SameLine();
-							if (ImGui::Button("X")) {
-								spline->_vertices.erase(spline->_vertices.begin() + spline->_nbCurves * spline->_offset + j);
-								ImGui::TreePop();
-								ImGui::PopID();
-								if (overflow - (spline->_nbCurves != 0) != 1) {
-									ImGui::TreePop();
-									ImGui::PopID();
-								}
-								spline->compile();
-								errorStr = "";
-								--j;
-								break;
-							}
 							ImGui::TreePop();
 						}
 						ImGui::PopID();

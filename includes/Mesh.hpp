@@ -43,11 +43,12 @@ public:
 	void	addPos(const Vec3& pos)						{ _pos += pos; }
 	void	switchFlags(const int flag)					{ _flags ^= flag; }
 	void	addFlags(const int flag)					{ _flags |= flag; }
+	void	removeFlags(const int flag)					{ _flags &= ~flag; }
 
 	void	createMesh();
 
-	void	updateStates(const double& deltaTime);
-	void	draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type = "mesh", bool forceOutline = false);
+	void	updateStates(const double deltaTime);
+	void	draw(const Shader &shader, const Camera &camera, const std::string& type = "mesh", bool forceOutline = false);
 	bool	splinePreview(const Camera& camera, float deltaTime);
 
 	void	createFinalVertices();
@@ -60,6 +61,7 @@ public:
 
 	void	destroy();
 
+	static Texture			_outlineTex;
 
 private:
 	std::vector<Vertex>		_rawVertices;
@@ -67,6 +69,9 @@ private:
 	faceGroupMap			_indicesGroups;
 	Vec3					_pos;
 	Vec3					_centerPoint;
+	Mat4					_model;
+	float					_rotation;
+	float					_oscillation;
 
 	int						_flags;
 	float					_useTexPercentage;
@@ -75,8 +80,9 @@ private:
 	float					_useStaticTex;
 	float					_outlineSize;
 
+
 	std::string				_name;
-	std::any				_spline; // always a Spline, any for the drag3 func
+	std::any				_spline; // always a Spline, any for the drag3 func as a reference
 	float					_u; // spline progress
 	float					_splineSpeed;
 	Spline::SplineType		_splineType;

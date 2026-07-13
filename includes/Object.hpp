@@ -105,7 +105,7 @@ private:
 	static const mapFunc				_matFunctionParser;
 
 private:
-	static matMap		_materials; // TODO : make it non static?
+	static matMap		_materials;
 	static std::string	_texturePath;
 
 	std::string			_filePath;

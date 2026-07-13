@@ -199,7 +199,7 @@ Mat4 ortho(const float left, const float right, const float bottom, const float 
 }
 
 Mat4 rotate(const Mat4 &mat, const float angleRad, const Vec3 &axis) {
-	return (mat * rotate(angleRad, axis));
+	return mat * rotate(angleRad, axis);
 }
 
 Mat4 rotate(const float angleRad, const Vec3 &axis) {

@@ -77,7 +77,7 @@ Spline::Spline(const SplineType type, const std::vector<Vec3>& vertices) :
 		_compiled(false),
 		_showPreview(true) {
 	_characteristic = _allCharacteristics[type];
-	_nbCurves = 1;
+	_nbCurves = 0;
 	_min = Vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	_max = Vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 

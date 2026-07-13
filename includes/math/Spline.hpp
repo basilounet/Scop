@@ -88,7 +88,7 @@ public:
 	void	setPoint(int index, const Vec3 &pos);
 	void	setMinMax(const Vec3 &min, const Vec3 &max);
 	void	setOrigin(const Vec3 &origin) { _origin = origin; }
-	void	setType(const SplineType type);
+	void	setType(SplineType type);
 	void	setShowPreview(const bool show) { _showPreview = show; }
 
 	std::vector<Vec3>&	getVertices()			{ return _vertices; }
