@@ -81,8 +81,9 @@ void Texture::unbind() const {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Texture::deleteTexture() const {
+void Texture::deleteTexture() {
 	glDeleteTextures(1, &_textureID);
+	_textureID = 0;
 }
 
 void Texture::texUnit(const Shader& shader, const std::string& uniform, const GLuint unit) {

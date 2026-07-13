@@ -185,12 +185,11 @@ void Scop::draw() {
 	inputs();
 	_shaderProgram.activate();
 	_camera.inputs(_window, _deltaTime);
-	_camera.updateMatrix(45.0f, 0.1f, 1000.0f);
-	_camera.sendUniforms(_shaderProgram);
+	_camera.updateMatrix(0.1f, 1000.0f);
 
 	static float oscil = 0.0f; // TODO : remove
-	oscil += _deltaTime * 1.f;
-	_rotation += _deltaTime * 10.0f;
+	oscil += _deltaTime * .8f;
+	_rotation += _deltaTime * 8.0f;
 	// double xPos, yPos;
 	// glfwGetCursorPos(_window, &xPos, &yPos);
 	// Vec2 mousePos = Vec2((float)xPos, (float)yPos);
@@ -202,6 +201,7 @@ void Scop::draw() {
 		model = translate(model, -_meshes[i].getCenterPoint());
 		// _meshes[i].addPos(cos(oscil));
 
+		_meshes[i].splinePreview(_camera, _deltaTime);
 		_meshes[i].updateStates(_deltaTime);
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilMask(0xFF);
@@ -247,7 +247,8 @@ void Scop::imGuiDisplay() {
 	matDisplay();
 	objectDisplay();
 	meshesDisplay();
-
+	if (!_meshes.empty())
+		_meshes[_currentEditMeshID].imGuiSpline(_camera);
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

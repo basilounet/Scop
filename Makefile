@@ -3,6 +3,7 @@
 SRC = 	$(GLAD_CPP) \
 		$(IMGUI_SRCS) \
 		main.cpp \
+		utils.cpp \
 		Scop.cpp \
 		Shader.cpp \
 		Skybox.cpp \
@@ -14,7 +15,6 @@ SRC = 	$(GLAD_CPP) \
 		Camera.cpp \
 		Mesh.cpp \
 		Object.cpp \
-		utils.cpp \
 		math/Vec2.cpp \
 		math/Vec3.cpp \
 		math/Vec4.cpp \
@@ -44,6 +44,7 @@ IMGUI_SRCS =    ../$(IMGUI)imgui.cpp \
 ##========== OBJECTS ==========##
 
 OBJS = $(addprefix $(OBJS_DIR),$(SRC:.cpp=.o))
+DEPS = $(addprefix $(OBJS_DIR), $(SRC:.cpp=.d))
 
 ##========== COLORS ==========##
 
@@ -473,3 +474,5 @@ endef
 
 
 .PHONY : all glfw glad imgui clean fclean cleanall re run
+
+-include $(DEPS)

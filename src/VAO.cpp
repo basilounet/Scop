@@ -34,6 +34,10 @@ VAO &VAO::operator=(const VAO &other) {
 	return *this;
 }
 
+GLuint & VAO::operator()() {
+	return _id;
+}
+
 /* ==================== METHODS ==================== */
 
 void VAO::linkAttrib(const VBO &VBO,
@@ -56,6 +60,7 @@ void VAO::unbind() {
 	glBindVertexArray(0);
 }
 
-void VAO::deleteVAO() const {
+void VAO::deleteVAO() {
 	glDeleteVertexArrays(1, &_id);
+	_id = 0;
 }

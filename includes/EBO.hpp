@@ -23,7 +23,7 @@ public:
 
 	void bind() const;
 	void unbind() const;
-	void deleteEBO() const;
+	void deleteEBO();
 };
 
 

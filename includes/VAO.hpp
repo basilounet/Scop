@@ -18,12 +18,13 @@ public:
 	VAO(const VAO &other);
 	~VAO();
 
-	VAO &operator=(const VAO &other);
+	VAO&	operator=(const VAO &other);
+	GLuint&	operator()();
 
 	void linkAttrib(const VBO &VBO, GLuint layout, GLuint nbComponents, GLenum type, GLsizeiptr stride, const void *offset);
 	void bind() const;
 	void unbind();
-	void deleteVAO() const;
+	void deleteVAO();
 };
 
 

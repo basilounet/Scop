@@ -16,7 +16,8 @@ Camera::Camera() :
 	_speedModifier(0.0f),
 	_multiplier(4.0f),
 	_sensitivity(30.0f),
-	_keysPressed(0)
+	_keysPressed(0),
+	_fov(45.f)
 {
 }
 
@@ -31,6 +32,7 @@ Camera::Camera(const int width, const int height, const Vec3& position, unsigned
 	_multiplier(4.0f),
 	_sensitivity(30.0f),
 	_keysPressed(0),
+	_fov(45.f),
 	_flags(flags)
 {
 }
@@ -60,55 +62,20 @@ Camera & Camera::operator=(const Camera &other) {
 Camera::~Camera() {
 }
 
-/* ==================== GETTERS / SETTERS ==================== */
-
-Vec3 Camera::getPos() const {
-	return _pos;
-}
-
-Vec3 Camera::getOrientation() const {
-	return _orientation;
-}
-
-Vec3 Camera::getUp() const {
-	return _up;
-}
-
-float Camera::getSpeed() const {
-	return _speed;
-}
-
-float Camera::getTotalSpeed() const {
-	return _speed + _speedModifier;
-}
-
-int Camera::getWidth() const {
-	return _width;
-}
-
-int Camera::getHeight() const {
-	return _height;
-}
-
-void Camera::setWindowSize(const int width, const int height) {
-	_width = width;
-	_height = height;
-}
 
 /* ==================== METHODS ==================== */
 
-void Camera::updateMatrix(const float FOVDeg, const float nearPlane, const float farPlane) {
+void Camera::updateMatrix(const float nearPlane, const float farPlane) {
 	Mat4 viewM = Mat4(1.0f);
 	Mat4 projM = Mat4(1.0f);
 	viewM = lookAt(_pos, _pos + _orientation, _up);
-	projM = perspective(FOVDeg, (float)_width / (float)_height, nearPlane, farPlane);
+	projM = perspective(_fov, (float)_width / (float)_height, nearPlane, farPlane);
 	_cameraMatrix = projM * viewM;
 }
 
 void Camera::sendUniforms(const Shader &shader) const {
 	glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "camMatrix"), 1, GL_FALSE, _cameraMatrix.m);
 	glUniform3f(glGetUniformLocation(shader.getID(), "camPos"), _pos.x, _pos.y, _pos.z);
-
 }
 
 void Camera::inputs(GLFWwindow *window, const double deltaTime) {
@@ -179,16 +146,17 @@ void Camera::inputHooks(GLFWwindow *window, int key, int scancode, int action, i
 
 void Camera::imGuiDisplay() {
 	static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoHostExtendX;
-	if (ImGui::BeginTable("table1", 6, flags)) {
+	if (ImGui::BeginTable("table1", 7, flags)) {
 		ImGui::TableSetupColumn("Pos X", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("Pos Y", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("Pos Z", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("Rot X", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("Rot Y", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("Rot Z", ImGuiTableColumnFlags_WidthFixed);
+		ImGui::TableSetupColumn("FOV", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableHeadersRow();
 		ImGui::TableNextRow();
-		for (int column = 0;  column < 6; column++) {
+		for (int column = 0;  column < 7; column++) {
 			ImGui::TableSetColumnIndex(column);
 			ImGui::PushItemWidth(-FLT_MIN);
 			ImGui::DragFloat(("##" + std::to_string(column)).c_str(),
@@ -199,9 +167,10 @@ void Camera::imGuiDisplay() {
 					case 3: return &_orientation.x;
 					case 4: return &_orientation.y;
 					case 5: return &_orientation.z;
+					case 6: return &_fov;
 					default: return nullptr;
 				}}(),
-				0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
+				0.025f, -FLT_MAX, +FLT_MAX, "%.2f");
 		}
 		ImGui::EndTable();
 	}

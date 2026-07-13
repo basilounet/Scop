@@ -11,7 +11,7 @@
 
 class Vec4 {
 public:
-	float x, y, z,w;
+	float x, y, z, w;
 
 	Vec4();
 	Vec4(float xyzw);

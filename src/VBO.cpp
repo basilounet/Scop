@@ -20,7 +20,6 @@ VBO::VBO(const VBO& other) {
 }
 
 VBO::~VBO() {
-	// glDeleteBuffers(1, &_id);
 }
 
 VBO& VBO::operator=(const VBO& other) {
@@ -28,6 +27,10 @@ VBO& VBO::operator=(const VBO& other) {
 		_id = other._id;
 	}
 	return *this;
+}
+
+GLuint & VBO::operator()() {
+	return _id;
 }
 
 void VBO::createEmptyVBO() {
@@ -44,6 +47,7 @@ void VBO::unbind() const {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VBO::deleteVBO() const {
+void VBO::deleteVBO() {
 	glDeleteBuffers(1, &_id);
+	_id = 0;
 }

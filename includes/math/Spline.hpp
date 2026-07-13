@@ -5,6 +5,7 @@
 #ifndef VOXEL_RPG_BEZIER_HPP
 # define VOXEL_RPG_BEZIER_HPP
 
+class Mesh;
 class Spline;
 
 # include <unordered_map>
@@ -21,6 +22,8 @@ class Spline;
 # include "Vec2.hpp"
 # include "Mat4.hpp"
 # include "Shader.hpp"
+# include "Camera.hpp"
+# include "VAO.hpp"
 
 
 struct SplineOutput {
@@ -34,8 +37,6 @@ struct SplineOutput {
 	Vec3			acceleration;
 	Vec3			jerk;
 };
-
-class TitleScreen;
 
 class Spline {
 public:
@@ -56,7 +57,7 @@ public:
 	Spline& operator==(const Spline &other);
 	~Spline();
 
-	friend TitleScreen;
+	friend Mesh;
 
 	void	compile();
 	short	overflowAmount() const; // tell if the number of vertices is invalid for the current type
@@ -95,7 +96,8 @@ public:
 	bool				isCompiled() const		{ return _compiled; }
 
 	void				computePreview();
-	void				renderPreview();
+	void				renderPreview(const Camera& camera);
+	void				destroyPreview();
 
 private:
 	void			_updateMinMaxPos(const Vec3 &pos);
@@ -117,7 +119,7 @@ private:
 	unsigned short		_offset; // offset for points beyond the first curve (e.g. for BEZIER, the first curve uses vertices 0-3, the second curve uses vertices 3-6, etc.)
 
 	bool				_showPreview;
-	GLuint				_VAO = 0;
+	VAO					_vao;
 	GLuint				_VBO = 0;
 	std::vector<Vec4>	_renderVertices;
 };

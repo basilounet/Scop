@@ -78,12 +78,15 @@ Spline::Spline(const SplineType type, const std::vector<Vec3>& vertices) :
 		_showPreview(true) {
 	_characteristic = _allCharacteristics[type];
 	_nbCurves = 1;
-	_min = vertices[0];
-	_max = vertices[0];
+	_min = Vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+	_max = Vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
+	if (_vertices.empty())
+		return ;
 	for (const auto& vertex : vertices)
 		_updateMinMaxPos(vertex);
 	compile();
+	computePreview();
 }
 
 Spline::Spline(const Spline &other) {
@@ -109,10 +112,6 @@ Spline & Spline::operator==(const Spline &other) {
 }
 
 Spline::~Spline() {
-	if (_VAO)
-		glDeleteVertexArrays(1, &_VAO);
-	if (_VBO)
-		glDeleteBuffers(1, &_VBO);
 }
 
 
@@ -120,7 +119,7 @@ Spline::~Spline() {
 
 
 void Spline::compile() {
-	PRINT RED "Compiling spline" CENDL;
+	PRINT BLU "Compiling spline" CENDL;
 	_compiled = false;
 	if (_vertices.empty())
 		throw std::runtime_error("Spline: Cannot compile a spline with no vertices.");
@@ -337,8 +336,8 @@ void Spline::printVerticesPos() const {
 }
 
 void Spline::addVertex(const Vec3 &pos) {
-	_vertices.push_back(pos);
-	_updateMinMaxPos(pos);
+	_vertices.push_back(pos - _origin);
+	_updateMinMaxPos(_vertices.back());
 	_compiled = false;
 }
 
@@ -359,11 +358,11 @@ void Spline::addVertex(std::string &str) {
 			}
 			catch (const std::exception& e) {
 				// throw std::runtime_error("Spline: Invalid vertex format in string.");
-				break;
+				break ;
 			}
 		}
 		if (components.size() != 3)
-			continue;
+			continue ; // ! must have exactly xyz
 			// throw std::runtime_error("Spline: Each vertex must have exactly 3 components.");
 		addVertex(Vec3(components[0], components[1], components[2]));
 	}
@@ -423,9 +422,7 @@ float Spline::_distToLine(const Vec3 &pos, const Vec3 &start, const Vec3 &end) {
 
 void Spline::computePreview() {
 	_renderVertices.clear();
-	if (_VAO)
-		glDeleteVertexArrays(1, &_VAO);
-	_VAO = 0;
+	_vao.deleteVAO();
 	if (_VBO)
 		glDeleteBuffers(1, &_VBO);
 	_VBO = 0;
@@ -434,42 +431,48 @@ void Spline::computePreview() {
 		return;
 	for (unsigned int i = 0; i <= _nbCurves * 20; ++i) {
 		float tIter = (i / (_nbCurves * 20.f)) * (float)(_nbCurves);
-		// if (tIter > u && !lineType.contains('F'))
-			// break;
-
 		_renderVertices.push_back(Vec4(getPoint(tIter).pos, i / (_nbCurves * 20.f)));
 	}
 
-	glGenVertexArrays(1, &_VAO);
+	_vao = VAO(true);
 	glGenBuffers(1, &_VBO);
 
-	glBindVertexArray(_VAO);
+	_vao.bind();
 	glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(_renderVertices.size() * sizeof(float) * 4), _renderVertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(_renderVertices.size() * sizeof(Vec4)), _renderVertices.data(), GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vec4), (void*)0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	_vao.unbind();
 }
 
-void Spline::renderPreview() {
-	if (_showPreview * _VBO * _VAO * _renderVertices.size() == 0)
+void Spline::renderPreview(const Camera& camera) {
+	if (_showPreview * _VBO * _vao() * _renderVertices.size() == 0)
 		return ;
 
 	_shader.activate();
+	_vao.bind();
+	camera.sendUniforms(_shader);
 
 	Mat4	model(1.f);
-	// model = glm::translate(model, _origin);
+	// model = translate(model, _origin);
+	// glUniform3f(glGetUniformLocation(_shader.getID(), "translation"), _origin.x, _origin.y, _origin.z);
 	glUniformMatrix4fv(glGetUniformLocation(_shader.getID(), "model"), 1, GL_FALSE, model.m);
 
 	glLineWidth((GLfloat)10);
-	// glDisable(GL_DEPTH_TEST);
 
-	glBindVertexArray(_VAO);
 	glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)_renderVertices.size());
 
     glLineWidth((GLfloat)1.f);
-	// glEnable(GL_DEPTH_TEST);
+	_vao.unbind();
+}
+
+void Spline::destroyPreview() {
+	_vao.deleteVAO();
+	if (_VBO)
+		glDeleteBuffers(1, &_VBO);
+	_VBO = 0;
+
 }

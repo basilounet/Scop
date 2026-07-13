@@ -1,7 +1,6 @@
 #version 330 core
 
-layout (location = 0) out vec4 FragColor;
-layout (location = 1) out vec4 BloomColor;
+out vec4 FragColor;
 
 in float   grad;
 
@@ -13,5 +12,5 @@ void main()
     vec3    color = mix(col1, col2, grad);
 
     FragColor = vec4(color, 1.);
-    BloomColor = vec4(color, 1.);
+
 }

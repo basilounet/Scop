@@ -25,17 +25,18 @@ public:
 	~Camera();
 
 
-	Vec3		getPos() const;
-	Vec3		getOrientation() const;
-	Vec3		getUp() const;
-	float		getSpeed() const;
-	float		getTotalSpeed() const;
-	int			getWidth() const;
-	int			getHeight() const;
+	Vec3		getPos()			const { return _pos; }
+	Vec3		getOrientation()	const { return _orientation; }
+	Vec3		getUp()				const { return _up; }
+	float		getSpeed()			const { return _speed; }
+	float		getTotalSpeed()		const { return _speed + _speedModifier; }
+	int			getWidth()			const { return _width; }
+	int			getHeight() 		const { return _height; }
+	float		getFov()			const { return _fov; }
 
-	void		setWindowSize(int width, int height);
+	void		setWindowSize(const int width, const int height) { _width = width; _height = height; }
 
-	void		updateMatrix(float FOVDeg, float nearPlane, float farPlane);
+	void		updateMatrix(float nearPlane, float farPlane);
 	void		sendUniforms(const Shader& shader) const;
 	void		inputs(GLFWwindow* window, double deltaTime);
 	void		inputHooks(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -53,6 +54,7 @@ private:
 	float			_multiplier;
 	float			_sensitivity;
 	unsigned int	_keysPressed;
+	float			_fov;
 	unsigned int*	_flags; // ptr to the flags variable in Scop class
 };
 

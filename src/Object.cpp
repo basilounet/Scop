@@ -366,7 +366,7 @@ void Object::parseNewMaterial(const std::vector<std::string> &tokens, size_t lin
 		throw std::runtime_error(RED"Invalid number of values for newmtl at line" YLW " ===> "
 			CYN + std::to_string(lineCount) + RESET);
 	if (_materials.find(tokens[1]) != _materials.end())
-		throw std::runtime_error(RED "WARNING : Material " CYN + tokens[1] +
+		throw std::runtime_error(ORG "WARNING" CYN " : Material " CYN + tokens[1] +
 			YLW" already exists. Ignoring this at line ===> " CYN + std::to_string(lineCount) + RESET);
 	// std::cout << RED "New MaterialData" RESET << std::endl;
 	_materials[tokens[1]] = MaterialData();

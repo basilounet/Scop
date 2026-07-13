@@ -8,6 +8,7 @@
 # include <vector>
 # include <functional>
 
+# include "math/Spline.hpp"
 # include "Camera.hpp"
 # include "VAO.hpp"
 # include "VBO.hpp"
@@ -23,29 +24,31 @@ public:
 	Mesh(const std::string& name, const std::vector<Vertex>& vertices, const faceGroupMap& indicesGroup);
 	explicit Mesh(const Object& object);
 	Mesh(const Mesh& other);
-
 	Mesh& operator=(const Mesh& other);
 	~Mesh();
 
-	const std::string&			getName()				const;
-	const Vec3&					getCenterPoint()		const;
-	const std::vector<Vertex>&	getVertices()			const;
-	const faceGroupMap&			getIndicesGroup()		const;
-	Vec3&						getPos();
-	const size_t&				getTotalIndicesCount()	const;
-	float&						getOutlineSize();
+	friend Spline;
 
-	void	setVertices(const std::vector<Vertex>& vertices);
+	const std::string&			getName()				const	{ return _name; }
+	const Vec3&					getCenterPoint()		const	{ return _centerPoint; }
+	const std::vector<Vertex>&	getVertices()			const	{ return _rawVertices; }
+	const faceGroupMap&			getIndicesGroup()		const	{ return _indicesGroups; }
+	Vec3&						getPos()						{ return _pos; }
+	const size_t&				getTotalIndicesCount()	const	{ return _totalIndicesCount; }
+	float&						getOutlineSize()				{ return _outlineSize; }
+
+	void	setVertices(const std::vector<Vertex>& v)	{ _rawVertices = v; }
 	void	setIndices(const faceGroupMap& indices);
-	void	setPos(const Vec3& pos);
-	void	addPos(const Vec3& pos);
-	void	switchFlags(int flag);
-	void	addFlags(int flag);
+	void	setPos(const Vec3& pos)						{ _pos = pos; }
+	void	addPos(const Vec3& pos)						{ _pos += pos; }
+	void	switchFlags(const int flag)					{ _flags ^= flag; }
+	void	addFlags(const int flag)					{ _flags |= flag; }
 
 	void	createMesh();
 
 	void	updateStates(const double& deltaTime);
 	void	draw(const Shader &shader, const Camera &camera, const Mat4& model, const std::string& type = "mesh", bool forceOutline = false);
+	bool	splinePreview(const Camera& camera, float deltaTime);
 
 	void	createFinalVertices();
 	void	calculateCenter();
@@ -53,8 +56,9 @@ public:
 	void	calculateNormals();
 
 	void	imGuiMeshInfos();
+	void	imGuiSpline(const Camera& camera);
 
-	void	destroy() const;
+	void	destroy();
 
 
 private:
@@ -72,6 +76,10 @@ private:
 	float					_outlineSize;
 
 	std::string				_name;
+	std::any				_spline; // always a Spline, any for the drag3 func
+	float					_u; // spline progress
+	float					_splineSpeed;
+	Spline::SplineType		_splineType;
 	size_t					_totalIndicesCount;
 
 	VAO						_vaoRaw;

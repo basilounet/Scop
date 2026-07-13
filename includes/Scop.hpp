@@ -21,6 +21,7 @@
 
 # include "Camera.hpp"
 # include "Mesh.hpp"
+# include "utils.hpp"
 # include "Colors.hpp"
 # include "Skybox.hpp"
 # include "math/Mat4.hpp"

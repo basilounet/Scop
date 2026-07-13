@@ -28,13 +28,14 @@ public:
 	VBO(const VBO& other);
 	~VBO();
 
-	VBO& operator=(const VBO& other);
+	VBO&	operator=(const VBO& other);
+	GLuint& operator()();
 
 	void createEmptyVBO();
 
 	void bind() const;
 	void unbind() const;
-	void deleteVBO() const;
+	void deleteVBO();
 };
 
 #endif //VBO_HPP

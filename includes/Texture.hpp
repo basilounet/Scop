@@ -30,7 +30,7 @@ public:
 
 	void bind() const;
 	void unbind() const;
-	void deleteTexture() const;
+	void deleteTexture();
 	void texUnit(const Shader& shader, const std::string& uniform, const GLuint unit);
 
 private:

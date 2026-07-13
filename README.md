@@ -5,7 +5,7 @@ This project has been created as part of the 42 curriculum by bvasseur.
 ## Description
 The goal of this project is to build a small program that displays a 3D object created with a modeling tool such as Blender.
 It will be our responsibility to parse it and render it correctly using OpenGL in C++. 
-The program will be able to display the object in a window and allow the user to manipulate it (rotate, zoom, etc.).
+The program will be able to display the object in a window and allow the user to manipulate it (rotate, move, etc.).
 ---
 ## Instrucions
 Run the following command to compile the project:
@@ -26,6 +26,7 @@ Then run the program with the following command:
 - [Material Template Library (MTL) file format](https://fr.wikipedia.org/wiki/Material_Template_Library)
 - [Video tutorials](https://www.youtube.com/watch?v=z03LXhRBLGI&list=PLPaoO-vpZnumdcb4tZc4x5Q-v7CkrQ6M-&index=2)
 - [ImGui widget list](https://pthom.github.io/imgui_explorer/)
+- [Splines video](https://www.youtube.com/watch?v=jvPPXbo87ds)
 ---
 ## Bonuses
 - Better parsing of the OBJ file format
@@ -35,7 +36,6 @@ Then run the program with the following command:
 - Real time Textures, Materials and Object loading AND changes
 - Meshes outlines with shaders
 - SkyBox
-- Lighting
 - Static Texture mapping
 - Object animations
 - Multiples objects and meshing each having their own pos, orientation, outline, scale, shader, animations, etc. They also can be tweaked in real time and individually with ImGui.
