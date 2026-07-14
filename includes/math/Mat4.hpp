@@ -54,6 +54,7 @@ Mat4	translate(const Vec3 &t);
 Mat4	translate(const Mat4 &mat, const Vec3 &v);
 
 float	radians(float degrees);
+float	degrees(float radians);
 
 
 #endif //SCOP_MAT4_HPP

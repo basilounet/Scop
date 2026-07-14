@@ -49,6 +49,8 @@ Object::Object(const std::string &filepath) {
 	parse(filepath);
 	for (auto& it: _indicesGroups)
 		_totalIndicesCount += it.second._indices.size();
+	if (_totalIndicesCount == 0 || _vertices.empty())
+		throw std::runtime_error(RED "No vertices or indices found in file: " PRP + filepath + RESET);
 }
 
 Object::Object(const Object &other) {

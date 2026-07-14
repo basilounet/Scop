@@ -44,10 +44,11 @@ public:
 	void	switchFlags(const int flag)					{ _flags ^= flag; }
 	void	addFlags(const int flag)					{ _flags |= flag; }
 	void	removeFlags(const int flag)					{ _flags &= ~flag; }
+	void	addPitchYaw(const float v);
 
 	void	createMesh();
 
-	void	updateStates(const double deltaTime);
+	void	updateStates(double deltaTime);
 	void	draw(const Shader &shader, const Camera &camera, const std::string& type = "mesh", bool forceOutline = false);
 	bool	splinePreview(const Camera& camera, float deltaTime);
 
@@ -70,12 +71,13 @@ private:
 	Vec3					_pos;
 	Vec3					_centerPoint;
 	Mat4					_model;
-	float					_rotation;
-	float					_oscillation;
+	Vec2					_pitchYaw;
+	Vec2					_rotationSpeed;
 
 	int						_flags;
 	float					_useTexPercentage;
 	float					_useColorPercentage;
+	float					_useTrianglePercentage;
 	float					_outlinePercentage;
 	float					_useStaticTex;
 	float					_outlineSize;

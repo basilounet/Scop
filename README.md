@@ -1,5 +1,5 @@
 # Scop
-This project has been created as part of the 42 curriculum by bvasseur.
+*This project has been created as part of the 42 curriculum by bvasseur.*
 
 ---
 ## Description
@@ -7,16 +7,34 @@ The goal of this project is to build a small program that displays a 3D object c
 It will be our responsibility to parse it and render it correctly using OpenGL in C++. 
 The program will be able to display the object in a window and allow the user to manipulate it (rotate, move, etc.).
 ---
-## Instrucions
+## Instructions
 Run the following command to compile the project:
 ```
-make glfw glad imgui
-make
+make glfw glad imgui && make
 ```
 Then run the program with the following command:
 ```
 ./scop <path_to_obj_file_1> <path_to_obj_file_2> ...
 ```
+### Controls
+ - **Enter**: Toggle mouse capture
+ - **Mouse**: Look around (if mouse is captured)
+ - **WASD**: Move around the scene
+ - **Q/E**: Move up/down
+ - **!@#$**: Change speed modifiers
+ - **Shift**: Move faster
+ - **Arrow keys**: Look around
+ - **456789 (numpad)**: Move selected object (79: up/down, 46: left/right)
+ - **1 (numpad)**: Toggle change Pitch / Yaw of selected object
+ - **23 (numpad)**: Increase/Decrease Pitch / Yaw (see above) of selected object
+ - **C**: Change the selected object (if multiple objects are loaded)
+ - **R**: Show normal of faces
+ - **Z**: Toggle to change the selected object color to see triangles
+ - **F**: Toggle to change the selected object color to shades of gray or normal colors
+ - **G**: Toggle to hide selected object
+ - **T**: Change Shader outline of selected Object
+ - **X**: Toggle to make textures of selected object static to world coordinates
+ - **H**: Toggle to show/hide outline of non-selected objects
 ---
 ## Resources
 - [OpenGL](https://www.opengl.org/)

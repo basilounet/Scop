@@ -245,3 +245,7 @@ Mat4 translate(const Mat4 &mat, const Vec3 &v) {
 float radians(const float degrees) {
 	return degrees * (M_PI / 180);
 }
+
+float degrees(float radians) {
+	return radians * (180.0f / M_PI);
+}

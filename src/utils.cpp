@@ -21,8 +21,8 @@ float lerp(float a, float b, float f) {
 	return a * (1.0 - f) + (b * f);
 }
 
-void drag3(Vec3 &vec, const std::string& label, float speed, float min, float max, float xSize, bool printLabel,
-		const std::function<void(std::any&)> &callback, std::any& data) {
+void drag3(Vec3 &vec, const std::string& label, const float speed, const float min, const float max, const float xSize,
+		const bool printLabel, const std::function<void(std::any&)> &callback, std::any& data) {
 	ImGui::SetNextItemWidth(xSize / 3.f);
 	if (ImGui::DragFloat(("##1" + label).c_str(), &vec.x, speed, min, max, "%.2f"))
 		callback(data);
@@ -33,6 +33,20 @@ void drag3(Vec3 &vec, const std::string& label, float speed, float min, float ma
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(xSize / 3.f);
 	if (ImGui::DragFloat(("##3" + label).c_str(), &vec.z, speed, min, max, "%.2f"))
+		callback(data);
+	ImGui::SameLine();
+	if (printLabel)
+		ImGui::Text("%s", label.c_str());
+}
+
+void drag2(Vec2 &vec, const std::string &label, const float speed, const float min, const float max, const float xSize,
+		const bool printLabel, const std::function<void(std::any &)> &callback, std::any &data) {
+	ImGui::SetNextItemWidth(xSize / 2.f);
+	if (ImGui::DragFloat(("##1" + label).c_str(), &vec.x, speed, min, max, "%.2f"))
+		callback(data);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(xSize / 2.f);
+	if (ImGui::DragFloat(("##2" + label).c_str(), &vec.y, speed, min, max, "%.2f"))
 		callback(data);
 	ImGui::SameLine();
 	if (printLabel)

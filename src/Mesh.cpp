@@ -16,8 +16,7 @@ Mesh::Mesh() {
 Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const faceGroupMap& indicesGroup) :
 		_rawVertices(vertices),
 		_indicesGroups(indicesGroup),
-		_rotation(0.f),
-		_oscillation(0.f),
+		_rotationSpeed(Vec2(0.f, 10.f)),
 		_outlineSize(.2f),
 		_name(name),
 		_u(.5f),
@@ -32,13 +31,12 @@ Mesh::Mesh(const std::string& name, const std::vector<Vertex> &vertices, const f
 		_totalIndicesCount += it.second._indices.size();
 
 	_spline = Spline(Spline::LINEAR, {});
-	// _spline = Spline(Spline::BEZIER, {Vec3(0, 0, 0), Vec3(5, 12, 0), Vec3(5, 12, 12), Vec3(0, 0, 12),
-	// 	Vec3(-5, -12, 12), Vec3(-5, -12, 0), Vec3(0, 0, 0)});
 	_model = Mat4(1.f);
 	_useColorPercentage = 1.0f;
 	_useTexPercentage = 1.0f;
 	_outlinePercentage = 1.0f;
-	_flags = USE_COLORS | USE_TEX | HIDE_OUTLINE | OUTLINE_PER | LOOP_SPLINE;
+	_useTrianglePercentage = 1.0f;
+	_flags = USE_COLORS | USE_TEX | HIDE_OUTLINE | OUTLINE_PER | LOOP_SPLINE | USE_TRI_PER;
 }
 
 Mesh::Mesh(const Object& object) {
@@ -58,10 +56,11 @@ Mesh & Mesh::operator=(const Mesh &other) {
 		_flags = other._flags;
 		_centerPoint = other._centerPoint;
 		_model = other._model;
-		_rotation = other._rotation;
-		_oscillation = other._oscillation;
+		_pitchYaw = other._pitchYaw;
+		_rotationSpeed = other._rotationSpeed;
 		_useTexPercentage = other._useTexPercentage;
 		_useColorPercentage = other._useColorPercentage;
+		_useTrianglePercentage = other._useTrianglePercentage;
 		_outlinePercentage = other._outlinePercentage;
 		_useStaticTex = other._useStaticTex;
 		_outlineSize = other._outlineSize;
@@ -89,6 +88,14 @@ void Mesh::setIndices(const faceGroupMap &indices) {
 	_totalIndicesCount = 0;
 	for (auto& it: _indicesGroups)
 		_totalIndicesCount += it.second._indices.size();
+}
+
+void Mesh::addPitchYaw(const float v) {
+	if (_flags & USE_PITCH_YAW)
+		_pitchYaw.x += v;
+	else
+		_pitchYaw.y += v;
+
 }
 
 
@@ -122,15 +129,18 @@ void Mesh::createMesh() {
 
 void Mesh::updateStates(const double deltaTime) {
 	_model = Mat4(1.f);
-	_oscillation += deltaTime * .8f;
-	_rotation += deltaTime * 8.0f;
-	_model = rotate(_model, radians(_rotation), Vec3(0.f, 1.f, 0.f));
-	_model = rotate(_model, radians(_rotation),
-					Vec3(std::cos(_oscillation + .5f), std::sin(_oscillation), std::cos(_oscillation)));
+
+	_pitchYaw.x += (float)deltaTime * _rotationSpeed.x;
+	_pitchYaw.y += (float)deltaTime * _rotationSpeed.y;
+	_pitchYaw.x = fmod(_pitchYaw.x, 360.f);
+	_pitchYaw.y = fmod(_pitchYaw.y, 360.f);
+	_model = rotate(_model, radians(_pitchYaw.x), Vec3(1.f, 0.f, 0.f));
+	_model = rotate(_model, radians(_pitchYaw.y), Vec3(0.f, 1.f, 0.f));
 	_model = translate(_model, -_centerPoint);
 
 	_useTexPercentage = std::clamp(_useTexPercentage + (_flags & USE_TEX ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 	_useColorPercentage = std::clamp(_useColorPercentage + (_flags & USE_COLORS ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
+	_useTrianglePercentage = std::clamp(_useTrianglePercentage + (_flags & USE_TRI_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 	_outlinePercentage = std::clamp(_outlinePercentage + (_flags & OUTLINE_PER ? 1.0f : -1.0f) * (float)deltaTime * 0.5f, 0.0f, 1.0f);
 }
 
@@ -156,6 +166,7 @@ void Mesh::draw(const Shader &shader, const Camera &camera, const std::string& t
 	glUniform3f(glGetUniformLocation(shader.getID(), "iResolution"), (float)camera.getWidth(), (float)camera.getHeight(), 0.f);
 	glUniform1f(glGetUniformLocation(shader.getID(), "useTexturePercentage"), _useTexPercentage);
 	glUniform1f(glGetUniformLocation(shader.getID(), "useColorPercentage"), _useColorPercentage);
+	glUniform1f(glGetUniformLocation(shader.getID(), "useTrianglesPercentage"), _useTrianglePercentage);
 	glUniform1f(glGetUniformLocation(shader.getID(), "outlinePercentage"), _outlinePercentage);
 	glUniform1i(glGetUniformLocation(shader.getID(), "staticTex"), (_flags & USE_STATIC_TEX) ? 1 : 0);
 	glUniform1f(glGetUniformLocation(shader.getID(), "outlining"), _outlineSize);
@@ -255,9 +266,14 @@ void Mesh::calculateNormals() {
 		Vec3 v1 = _finalVertices[i + 1].pos;
 		Vec3 v2 = _finalVertices[i + 2].pos;
 		const Vec3 normal = normalize(cross(v1 - v0, v2 - v0));
-		_finalVertices[i].normal = _finalVertices[i].color = normal;
-		_finalVertices[i + 1].normal = _finalVertices[i + 1].color = normal;
-		_finalVertices[i + 2].normal = _finalVertices[i + 2].color = normal;
+		_finalVertices[i].normal = normal;
+		_finalVertices[i + 1].normal = normal;
+		_finalVertices[i + 2].normal = normal;
+		const Vec3 color = Vec3((float)(i * 12 % 256) / 256);
+		_finalVertices[i].color = color;
+		_finalVertices[i + 1].color = color;
+		_finalVertices[i + 2].color = color;
+
 	}
 
 	std::vector<GLuint> indicesBuffer;
@@ -277,7 +293,8 @@ void Mesh::calculateNormals() {
 void Mesh::imGuiMeshInfos() {
 	ImGui::Text("Name : %s", _name.c_str());
 	drag3(_pos, "posOffset", 0.01f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
-	ImGui::DragFloat("Ouline Size", &_outlineSize, .01f, 0.f, FLT_MAX);
+	drag2(_pitchYaw, "Orientation", 0.3f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
+	drag2(_rotationSpeed, "Rotation Speed", .1f, -FLT_MAX, FLT_MAX, ImGui::GetContentRegionAvail().x * .6f);
 
 	if (ImGui::Button("Flip tex (R)"))
 		_flags ^= USE_TEX;
@@ -299,6 +316,11 @@ void Mesh::imGuiMeshInfos() {
 	ImGui::SameLine();
 	if (ImGui::Button("Use Static Tex (X)"))
 		_flags ^= USE_STATIC_TEX;
+	if (ImGui::Button("Flip triangles (Z)"))
+		_flags ^= USE_TRI_PER;
+	ImGui::SameLine();
+	ImGui::Text("%.0f%%", _useTrianglePercentage * 100);
+	ImGui::SameLine();
 }
 
 void Mesh::imGuiSpline(const Camera& camera) {
@@ -318,7 +340,7 @@ void Mesh::imGuiSpline(const Camera& camera) {
 			ImGui::SameLine();
 			if (ImGui::Button("launch")) {
 				spline->compile();
-				_u = 0.f;
+				_u = _splineSpeed >= 0 ? 0.f : spline->_nbCurves;
 				errorStr = "";
 				_flags |= RUN_SPLINE;
 			}

@@ -34,10 +34,6 @@ Scop::Scop(int ac, char **av) : _width(1400), _height(800), _lastTime(0), _delta
 
 	for (auto& obj: _objects)
 		_meshes.emplace_back(obj.second);
-	// for (size_t i = 0; i < _objects.size(); ++i) {
-		// _mesh.push_back(Mesh(_objects[i].second));
-		// _mesh[i].setPosOffset(Vec3(i * 5, i * 5, i * 5));
-	// }
 	_skybox.createSkybox();
 	_rotation = 0.0f;
 	_averageFPS.resize(50, 60);
@@ -112,9 +108,13 @@ void Scop::parse(int ac, char **av) {
 	if (ac < 2)
 		throw std::runtime_error("Usage: ./scop <path_to_obj_file>");
 	for (int i = 1; i < ac; ++i) {
-		if (_objects.find(av[i]) == _objects.end())
-			_objects[std::string(av[i]).substr(std::string(av[i]).find_last_of("/\\") + 1)] = Object(av[i]);
-		// _objects.emplace_back(av[i]);
+		try {
+			if (_objects.find(av[i]) == _objects.end())
+				_objects[std::string(av[i]).substr(std::string(av[i]).find_last_of("/\\") + 1)] = Object(av[i]);
+		}
+		catch (std::exception &e) {
+			std::cerr << e.what() << std::endl;
+		}
 	}
 }
 
@@ -169,6 +169,10 @@ void Scop::keyCallback(GLFWwindow *window, int key, int scancode, int action, in
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(HIDE_OUTLINE);
 	if (key == GLFW_KEY_X && action == GLFW_PRESS)
 		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_STATIC_TEX);
+	if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_TRI_PER);
+	if (key == GLFW_KEY_KP_1 && action == GLFW_PRESS)
+		scop->_meshes[scop->_currentEditMeshID].switchFlags(USE_PITCH_YAW);
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 		scop->_currentEditMeshID = ++scop->_currentEditMeshID % scop->_meshes.size();
 }
@@ -227,7 +231,10 @@ void Scop::inputs() {
 		_meshes[_currentEditMeshID].addPos({0.f, 0.f, -(float)_deltaTime});
 	if (glfwGetKey(_window, GLFW_KEY_KP_5) == GLFW_PRESS)
 		_meshes[_currentEditMeshID].addPos({0.f, 0.f,  (float)_deltaTime});
-}
+	if (glfwGetKey(_window, GLFW_KEY_KP_2) == GLFW_PRESS)
+		_meshes[_currentEditMeshID].addPitchYaw(_deltaTime * 30.f);
+	if (glfwGetKey(_window, GLFW_KEY_KP_3) == GLFW_PRESS)
+		_meshes[_currentEditMeshID].addPitchYaw(-_deltaTime * 30.f);}
 
 void Scop::imGuiDisplay() {
 	ImGui_ImplOpenGL3_NewFrame();
